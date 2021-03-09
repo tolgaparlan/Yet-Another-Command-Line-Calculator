@@ -47,7 +47,7 @@ pub fn parse_expr(v: &[Token]) -> Result<Expr, ParserError> {
             Some((i, Token::Plus)) => {
                 return Ok(Expr::Sum(Box::from(parse_expr(&v[0..i])?), parse_term(&v[i + 1..])?));
             }
-            Some((i, Token::Minus)) => {
+            Some((i, Token::Minus)) if i > 0 => {
                 return Ok(Expr::Subtract(Box::from(parse_expr(&v[0..i])?), parse_term(&v[i + 1..])?));
             }
             Some((_, Token::LeftPar)) => {
@@ -130,7 +130,7 @@ pub fn parse_factor(v: &[Token]) -> Result<Factor, ParserError> {
 
 impl fmt::Display for ParserError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Invalid token at index:")
+        write!(f, "{}", self.t)
     }
 }
 
