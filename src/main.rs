@@ -1,7 +1,7 @@
-use std::process::exit;
 use crate::tokenizer::tokenize;
 use crate::parser::parse;
 use crate::evaluator::eval_expr;
+use std::process::exit;
 
 mod tokenizer;
 mod parser;
@@ -13,8 +13,8 @@ fn main() {
         let mut line = String::new();
 
         if let Err(e) = input.read_line(&mut line) {
-            eprintln!("{}", e);
-            continue;
+            eprintln!("Input Error: {}", e);
+            exit(1);
         };
 
         let tokens = tokenize(String::from(line.trim()));
