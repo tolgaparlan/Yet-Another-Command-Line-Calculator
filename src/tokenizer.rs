@@ -1,8 +1,8 @@
 use std::fmt;
 use std::str::Chars;
-use std::iter::Peekable;
+use std::iter::{Peekable};
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub enum Token {
     Number(u64),
     Plus,
@@ -14,23 +14,21 @@ pub enum Token {
     End,
 }
 
-pub type Result<T> = std::result::Result<T, TokenizeError>;
-
 #[derive(PartialEq, Debug)]
 pub struct TokenizeError {
     index: usize
 }
 
-impl std::error::Error for TokenizeError{}
+impl std::error::Error for TokenizeError {}
 
 struct CharStream<'a> {
     index: usize,
     iterator: Peekable<Chars<'a>>,
 }
 
-pub fn tokenize(line: String) -> Result<Vec<Token>> {
+pub fn tokenize(line: String) -> Result<Vec<Token>, TokenizeError> {
     let mut char_stream = CharStream::new(line.chars().peekable());
-    let mut v = vec![];
+    let mut tokens = vec![];
 
     loop {
         let c = char_stream.next();
@@ -62,10 +60,10 @@ pub fn tokenize(line: String) -> Result<Vec<Token>> {
             break;
         }
 
-        v.push(tok);
+        tokens.push(tok);
     }
 
-    Ok(v)
+    Ok(tokens)
 }
 
 impl fmt::Display for TokenizeError {
@@ -99,17 +97,18 @@ mod tests {
     #[test]
     fn test_tokenize() {
         assert_eq!(
-            tokenize(String::from("1+123*(12/234)")),
-            Ok(vec![Token::Number(1),
-                 Token::Plus,
-                 Token::Number(123),
-                 Token::Mult,
-                 Token::LeftPar,
-                 Token::Number(12),
-                 Token::Div,
-                 Token::Number(234),
-                 Token::RightPar
-            ])
+            tokenize(String::from("1+123*(12/234)")).unwrap(),
+            vec![
+                Token::Number(1),
+                Token::Plus,
+                Token::Number(123),
+                Token::Mult,
+                Token::LeftPar,
+                Token::Number(12),
+                Token::Div,
+                Token::Number(234),
+                Token::RightPar
+            ]
         );
     }
 
@@ -117,7 +116,7 @@ mod tests {
     fn test_error() {
         assert_eq!(
             tokenize(String::from("1+asd*(12/234)")),
-            Err(TokenizeError{
+            Err(TokenizeError {
                 index: 3
             })
         );
