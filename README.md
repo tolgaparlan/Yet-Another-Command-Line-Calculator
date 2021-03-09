@@ -21,6 +21,7 @@ Expected Number
 8
 234/(233)
 1
+exit
 ```
 
 So far only supports addition, subtraction, multiplication and division. 
