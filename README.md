@@ -22,3 +22,11 @@ Expected Number
 234/(233)
 1
 ```
+
+So far only supports addition, subtraction, multiplication and division. 
+
+## TODO
+- Add more operations
+  - Power
+- Add variables
+- Add floating point logic
