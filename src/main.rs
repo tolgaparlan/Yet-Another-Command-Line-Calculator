@@ -17,7 +17,11 @@ fn main() {
             exit(1);
         };
 
-        let tokens = tokenize(String::from(line.trim()));
+        if line.trim() == "exit" {
+            exit(0);
+        }
+
+        let tokens = tokenize(line);
         if let Err(err) = tokens {
             eprintln!("{}", err);
             continue;
