@@ -53,6 +53,7 @@ pub fn tokenize(line: String) -> Result<Vec<Token>, TokenizeError> {
                 };
                 Token::Number(n)
             }
+            _ if c.is_whitespace() => { continue; }
             _ => { return Err(TokenizeError { index: char_stream.index }); }
         };
 
