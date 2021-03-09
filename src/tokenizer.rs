@@ -21,6 +21,8 @@ pub struct TokenizeError {
     index: usize
 }
 
+impl std::error::Error for TokenizeError{}
+
 struct CharStream<'a> {
     index: usize,
     iterator: Peekable<Chars<'a>>,
