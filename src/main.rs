@@ -1,38 +1,36 @@
-use crate::tokenizer::tokenize;
-use crate::parser::parse;
 use crate::evaluator::eval_expr;
+use crate::parser::parse;
+use crate::tokenizer::tokenize;
 use std::process::exit;
 
-mod tokenizer;
-mod parser;
 mod evaluator;
+mod parser;
+mod tokenizer;
 
 fn main() {
     let input = std::io::stdin();
-    loop {
-        let mut line = String::new();
+    let mut line = String::new();
 
+    loop {
         if let Err(e) = input.read_line(&mut line) {
             eprintln!("Input Error: {}", e);
             exit(1);
         };
 
-        if line.trim() == "exit" {
-            exit(0);
-        }
+        let line_trimmed = line.trim();
 
-        let tokens = tokenize(line);
-        if let Err(err) = tokens {
-            eprintln!("{}", err);
-            continue;
+        match tokenize(line_trimmed) {
+            Ok(tokens) => match parse(tokens) {
+                Ok(expr) => println!("{}", eval_expr(expr)),
+                Err(err) => {
+                    eprintln!("{}", err);
+                    continue;
+                }
+            },
+            Err(err) => {
+                eprintln!("{}", err);
+                continue;
+            }
         }
-
-        let expr = parse(tokens.unwrap());
-        if let Err(err) = expr {
-            eprintln!("{}", err);
-            continue;
-        }
-
-        println!("{}", eval_expr(expr.unwrap()));
     }
 }

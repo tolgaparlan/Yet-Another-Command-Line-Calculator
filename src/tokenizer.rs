@@ -1,8 +1,8 @@
 use std::fmt;
+use std::iter::Peekable;
 use std::str::Chars;
-use std::iter::{Peekable};
 
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum Token {
     Number(u64),
     Plus,
@@ -14,9 +14,9 @@ pub enum Token {
     End,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct TokenizeError {
-    index: usize
+    index: usize,
 }
 
 impl std::error::Error for TokenizeError {}
@@ -26,7 +26,7 @@ struct CharStream<'a> {
     iterator: Peekable<Chars<'a>>,
 }
 
-pub fn tokenize(line: String) -> Result<Vec<Token>, TokenizeError> {
+pub fn tokenize(line: &str) -> Result<Vec<Token>, TokenizeError> {
     let mut char_stream = CharStream::new(line.chars().peekable());
     let mut tokens = vec![];
 
@@ -49,12 +49,22 @@ pub fn tokenize(line: String) -> Result<Vec<Token>, TokenizeError> {
                 let kek = chars.iter().collect::<String>();
                 let n: u64 = match kek.parse::<u64>() {
                     Ok(n) => n,
-                    Err(_) => return Err(TokenizeError { index: char_stream.index })
+                    Err(_) => {
+                        return Err(TokenizeError {
+                            index: char_stream.index,
+                        })
+                    }
                 };
                 Token::Number(n)
             }
-            _ if c.is_whitespace() => { continue; }
-            _ => { return Err(TokenizeError { index: char_stream.index }); }
+            _ if c.is_whitespace() => {
+                continue;
+            }
+            _ => {
+                return Err(TokenizeError {
+                    index: char_stream.index,
+                });
+            }
         };
 
         if let Token::End = tok {
@@ -75,10 +85,7 @@ impl fmt::Display for TokenizeError {
 
 impl<'a> CharStream<'a> {
     fn new(iterator: Peekable<Chars>) -> CharStream {
-        CharStream {
-            index: 0,
-            iterator,
-        }
+        CharStream { index: 0, iterator }
     }
 
     fn next(&mut self) -> char {
@@ -98,7 +105,7 @@ mod tests {
     #[test]
     fn test_tokenize() {
         assert_eq!(
-            tokenize(String::from("1+123*(12/234)")).unwrap(),
+            tokenize("1+123*(12/234)").unwrap(),
             vec![
                 Token::Number(1),
                 Token::Plus,
@@ -115,11 +122,6 @@ mod tests {
 
     #[test]
     fn test_error() {
-        assert_eq!(
-            tokenize(String::from("1+asd*(12/234)")),
-            Err(TokenizeError {
-                index: 3
-            })
-        );
+        assert_eq!(tokenize("1+asd*(12/234)"), Err(TokenizeError { index: 3 }));
     }
 }
