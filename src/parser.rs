@@ -30,9 +30,9 @@ pub struct ParserError {
 
 impl Error for ParserError {}
 
-pub fn parse(v: Vec<Token>) -> Result<Expr, ParserError> {
-    parse_expr(&v[..])
-}
+// pub fn parse(v: Vec<Token>) -> Result<Expr, ParserError> {
+//     parse_expr(&v[..])
+// }
 
 pub fn parse_expr(v: &[Token]) -> Result<Expr, ParserError> {
     let mut it = v.iter().enumerate();
@@ -169,7 +169,7 @@ mod tests {
     #[test]
     fn test_parser() {
         assert_eq!(
-            parse(vec![
+            parse_expr(&[
                 Token::Number(1),
                 Token::Plus,
                 Token::Number(123),

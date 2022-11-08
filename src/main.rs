@@ -1,5 +1,6 @@
+use parser::parse_expr;
+
 use crate::evaluator::eval_expr;
-use crate::parser::parse;
 use crate::tokenizer::tokenize;
 use std::process::exit;
 
@@ -20,7 +21,7 @@ fn main() {
         let line_trimmed = line.trim();
 
         match tokenize(line_trimmed) {
-            Ok(tokens) => match parse(tokens) {
+            Ok(tokens) => match parse_expr(&tokens) {
                 Ok(expr) => println!("{}", eval_expr(expr)),
                 Err(err) => {
                     eprintln!("{}", err);
