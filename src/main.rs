@@ -10,14 +10,13 @@ mod tokenizer;
 
 fn main() {
     let input = std::io::stdin();
-    let mut line = String::new();
 
     loop {
+        let mut line = String::new();
         if let Err(e) = input.read_line(&mut line) {
             eprintln!("Input Error: {}", e);
             exit(1);
         };
-
         let line_trimmed = line.trim();
 
         match tokenize(line_trimmed) {

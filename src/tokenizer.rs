@@ -1,8 +1,10 @@
-use std::fmt;
+use std::{fmt, str::FromStr};
 
-#[derive(PartialEq, Eq, Debug, Copy, Clone)]
+use num_bigint::BigUint;
+
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Token {
-    Number(u64),
+    Number(BigUint),
     Plus,
     Minus,
     Mult,
@@ -42,7 +44,8 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, TokenizeError> {
                     chars.push(*peeked_char);
                     it.next();
                 }
-                let Ok(n) = chars.iter().collect::<String>().parse::<u64>() else {
+                //TODO
+                let Ok(n) = BigUint::from_str(&chars.iter().collect::<String>()) else {
                     return Err(TokenizeError { index });
                 };
                 Token::Number(n)
@@ -76,14 +79,14 @@ mod tests {
         assert_eq!(
             tokenize("1+123*(12/234)").unwrap(),
             vec![
-                Token::Number(1),
+                Token::Number(1usize.into()),
                 Token::Plus,
-                Token::Number(123),
+                Token::Number(123usize.into()),
                 Token::Mult,
                 Token::LeftPar,
-                Token::Number(12),
+                Token::Number(12usize.into()),
                 Token::Div,
-                Token::Number(234),
+                Token::Number(234usize.into()),
                 Token::RightPar
             ]
         );

@@ -1,6 +1,6 @@
 use crate::tokenizer::Token;
-use std::error::Error;
-use std::fmt;
+use num_bigint::BigUint;
+use std::{error::Error, fmt};
 
 #[derive(Debug, PartialEq)]
 pub enum Expr {
@@ -18,17 +18,10 @@ pub enum Term {
 
 #[derive(Debug, PartialEq)]
 pub enum Factor {
-    Number(u64),
+    Number(BigUint),
     Parenthesis(Box<Expr>),
     Negative(Box<Factor>),
 }
-
-#[derive(PartialEq, Eq, Debug)]
-pub struct ParserError {
-    t: String,
-}
-
-impl Error for ParserError {}
 
 pub fn parse_expr(tokens: &[Token]) -> Result<Expr, ParserError> {
     let mut it = tokens.iter().enumerate();
@@ -48,19 +41,7 @@ pub fn parse_expr(tokens: &[Token]) -> Result<Expr, ParserError> {
                 ));
             }
             Token::LeftPar => {
-                // iterate until the matching right parenthesis
-                let mut left_count = 1;
-                for (_, &t) in it.by_ref() {
-                    left_count += match t {
-                        Token::LeftPar => 1,
-                        Token::RightPar => -1,
-                        _ => 0,
-                    };
-                    if left_count == 0 {
-                        break;
-                    }
-                }
-                if left_count > 0 {
+                if !matching_paranthesis(it.by_ref()) {
                     return Err(ParserError {
                         t: String::from("Expected `)`"),
                     });
@@ -99,16 +80,7 @@ fn parse_term(v: &[Token]) -> Result<Term, ParserError> {
                 ));
             }
             Some((_, Token::LeftPar)) => {
-                // iterate until the matching right parenthesis
-                let mut left_count = 1;
-                for (_, &t) in it.by_ref() {
-                    left_count += i32::from(t == Token::LeftPar);
-                    left_count -= i32::from(t == Token::RightPar);
-                    if left_count == 0 {
-                        break;
-                    }
-                }
-                if left_count > 0 {
+                if !matching_paranthesis(it.by_ref()) {
                     return Err(ParserError {
                         t: String::from("Expected `)`"),
                     });
@@ -127,11 +99,11 @@ fn parse_term(v: &[Token]) -> Result<Term, ParserError> {
 fn parse_factor(v: &[Token]) -> Result<Factor, ParserError> {
     let mut it = v.iter();
 
-    match it.next() {
+    match &mut it.next() {
         None => Err(ParserError {
             t: String::from("Expected Number"),
         }),
-        Some(Token::Number(n)) if it.next().is_none() => Ok(Factor::Number(*n)),
+        Some(Token::Number(n)) if it.next().is_none() => Ok(Factor::Number(n.clone())),
         Some(Token::Minus) => Ok(Factor::Negative(Box::from(parse_factor(&v[1..])?))),
         Some(Token::LeftPar) => {
             if let Some(Token::RightPar) = it.last() {
@@ -150,10 +122,33 @@ fn parse_factor(v: &[Token]) -> Result<Factor, ParserError> {
     }
 }
 
+#[derive(PartialEq, Eq, Debug)]
+pub struct ParserError {
+    t: String,
+}
+
+impl Error for ParserError {}
+
 impl fmt::Display for ParserError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.t)
     }
+}
+
+/// iterate until the matching right parenthesis
+fn matching_paranthesis(it: &mut dyn Iterator<Item = (usize, &Token)>) -> bool {
+    let mut left_count = 1;
+    for (_, t) in it {
+        left_count += match t {
+            Token::LeftPar => 1,
+            Token::RightPar => -1,
+            _ => 0,
+        };
+        if left_count == 0 {
+            break;
+        }
+    }
+    left_count > 0
 }
 
 #[cfg(test)]
@@ -164,24 +159,24 @@ mod tests {
     fn test_parser() {
         assert_eq!(
             parse_expr(&[
-                Token::Number(1),
+                Token::Number(1usize.into()),
                 Token::Plus,
-                Token::Number(123),
+                Token::Number(123usize.into()),
                 Token::Mult,
                 Token::LeftPar,
-                Token::Number(12),
+                Token::Number(12usize.into()),
                 Token::Div,
-                Token::Number(234),
+                Token::Number(234usize.into()),
                 Token::RightPar
             ])
             .unwrap(),
             Expr::Sum(
-                Box::from(Expr::Term(Term::Factor(Factor::Number(1)))),
+                Box::from(Expr::Term(Term::Factor(Factor::Number(1usize.into())))),
                 Term::Mult(
-                    Box::from(Term::Factor(Factor::Number(123))),
+                    Box::from(Term::Factor(Factor::Number(123usize.into()))),
                     Factor::Parenthesis(Box::from(Expr::Term(Term::Div(
-                        Box::from(Term::Factor(Factor::Number(12))),
-                        Factor::Number(234)
+                        Box::from(Term::Factor(Factor::Number(12usize.into()))),
+                        Factor::Number(234usize.into())
                     )))),
                 ),
             )
