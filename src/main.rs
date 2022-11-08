@@ -21,7 +21,10 @@ fn main() {
 
         match tokenize(line_trimmed) {
             Ok(tokens) => match parse_expr(&tokens) {
-                Ok(expr) => println!("{}", eval_expr(expr)),
+                Ok(expr) => match eval_expr(expr) {
+                    Ok(res) => println!("\\> {}", res),
+                    Err(err) => eprintln!("{}", err),
+                },
                 Err(err) => {
                     eprintln!("{}", err);
                     continue;

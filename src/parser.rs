@@ -42,9 +42,7 @@ pub fn parse_expr(tokens: &[Token]) -> Result<Expr, ParserError> {
             }
             Token::LeftPar => {
                 if !matching_paranthesis(it.by_ref()) {
-                    return Err(ParserError {
-                        t: String::from("Expected `)`"),
-                    });
+                    return Err(ParserError { t: "Expected `)`" });
                 }
             }
             _ => {
@@ -81,9 +79,7 @@ fn parse_term(v: &[Token]) -> Result<Term, ParserError> {
             }
             Some((_, Token::LeftPar)) => {
                 if !matching_paranthesis(it.by_ref()) {
-                    return Err(ParserError {
-                        t: String::from("Expected `)`"),
-                    });
+                    return Err(ParserError { t: "Expected `)`" });
                 }
             }
             Some(_) => {
@@ -96,35 +92,33 @@ fn parse_term(v: &[Token]) -> Result<Term, ParserError> {
     Ok(Term::Factor(parse_factor(v)?))
 }
 
-fn parse_factor(v: &[Token]) -> Result<Factor, ParserError> {
-    let mut it = v.iter();
+fn parse_factor(tokens: &[Token]) -> Result<Factor, ParserError> {
+    let mut it = tokens.iter();
 
     match &mut it.next() {
         None => Err(ParserError {
-            t: String::from("Expected Number"),
+            t: "Expected Number",
         }),
         Some(Token::Number(n)) if it.next().is_none() => Ok(Factor::Number(n.clone())),
-        Some(Token::Minus) => Ok(Factor::Negative(Box::from(parse_factor(&v[1..])?))),
+        Some(Token::Minus) => Ok(Factor::Negative(Box::from(parse_factor(&tokens[1..])?))),
         Some(Token::LeftPar) => {
             if let Some(Token::RightPar) = it.last() {
                 Ok(Factor::Parenthesis(Box::from(parse_expr(
-                    &v[1..v.len() - 1],
+                    &tokens[1..tokens.len() - 1],
                 )?)))
             } else {
-                Err(ParserError {
-                    t: String::from("Expected `)`"),
-                })
+                Err(ParserError { t: "Expected `)`" })
             }
         }
         Some(_) => Err(ParserError {
-            t: String::from("Expected Expression"),
+            t: "Expected Expression",
         }),
     }
 }
 
 #[derive(PartialEq, Eq, Debug)]
 pub struct ParserError {
-    t: String,
+    t: &'static str,
 }
 
 impl Error for ParserError {}
@@ -148,7 +142,7 @@ fn matching_paranthesis(it: &mut dyn Iterator<Item = (usize, &Token)>) -> bool {
             break;
         }
     }
-    left_count > 0
+    left_count == 0
 }
 
 #[cfg(test)]
@@ -168,9 +162,8 @@ mod tests {
                 Token::Div,
                 Token::Number(234usize.into()),
                 Token::RightPar
-            ])
-            .unwrap(),
-            Expr::Sum(
+            ]),
+            Ok(Expr::Sum(
                 Box::from(Expr::Term(Term::Factor(Factor::Number(1usize.into())))),
                 Term::Mult(
                     Box::from(Term::Factor(Factor::Number(123usize.into()))),
@@ -179,7 +172,7 @@ mod tests {
                         Factor::Number(234usize.into())
                     )))),
                 ),
-            )
+            ))
         );
     }
 }

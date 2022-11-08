@@ -1,4 +1,4 @@
-# rust-arithmetic
+# README 
 A basic integer arithmetic calculator I have built with Rust for self-learning. 
 
 Run with `cargo run`.
@@ -25,9 +25,3 @@ exit
 ```
 
 So far only supports addition, subtraction, multiplication and division. 
-
-## TODO
-- Add more operations
-  - Power
-- Add variables
-- Add floating point logic
