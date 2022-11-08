@@ -93,7 +93,7 @@ mod tests {
     }
 
     #[test]
-    fn test_error() {
+    fn test_error_string() {
         assert_eq!(tokenize("1+asd*(12/234)"), Err(TokenizeError { index: 2 }));
     }
 }

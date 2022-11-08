@@ -49,6 +49,8 @@ impl Error for EvaluationError {}
 
 #[cfg(test)]
 mod tests {
+    use num_bigint::BigUint;
+
     use super::*;
 
     #[test]
@@ -56,11 +58,32 @@ mod tests {
         assert_eq!(
             eval_expr(Expr::Term(Term::Factor(Factor::Parenthesis(Box::from(
                 Expr::Term(Term::Div(
-                    Box::from(Term::Factor(Factor::Number(120usize.into()))),
-                    Factor::Number(24usize.into()),
+                    Box::from(Term::Factor(Factor::Number(BigUint::from(120usize)))),
+                    Factor::Number(BigUint::from(24usize)),
                 ),)
             ))))),
             Ok(BigInt::from(5))
+        )
+    }
+
+    #[test]
+    fn test_evaluation_div_by_zero() {
+        assert_eq!(
+            eval_expr(Expr::Term(Term::Div(
+                Box::from(Term::Factor(Factor::Number(BigUint::from(120usize)))),
+                Factor::Number(BigUint::from(0usize)),
+            ))),
+            Err(EvaluationError::DivisionByZero(BigInt::from(120)))
+        )
+    }
+
+    #[test]
+    fn test_evaluation_negative() {
+        assert_eq!(
+            eval_factor(Factor::Negative(Box::new(Factor::Number(BigUint::from(
+                120usize
+            ))))),
+            Ok(BigInt::from(-120))
         )
     }
 }
