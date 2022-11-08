@@ -1,6 +1,8 @@
-use std::{fmt, str::FromStr};
+use std::str::FromStr;
 
 use num_bigint::BigUint;
+
+use crate::error::ArithmeticError;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Token {
@@ -13,14 +15,8 @@ pub enum Token {
     RightPar,
 }
 
-#[derive(PartialEq, Eq, Debug)]
-pub struct TokenizeError {
-    index: usize,
-}
-
-impl std::error::Error for TokenizeError {}
-
-pub fn tokenize(line: &str) -> Result<Vec<Token>, TokenizeError> {
+/// Makes a list of tokens from given string. Can fail given unrecognised characters
+pub fn tokenize(line: &str) -> Result<Vec<Token>, crate::error::ArithmeticError> {
     let mut it = line.chars().enumerate().peekable();
     let mut tokens = vec![];
 
@@ -34,19 +30,18 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, TokenizeError> {
             ')' => Token::RightPar,
             c if c.is_ascii_digit() => {
                 // Consume a number token
-                let mut chars = vec![c];
+                let mut digits = String::from(c);
 
                 // peek while searching the boundary of the number
                 while let Some((_, peeked_char)) = it.peek() {
                     if !peeked_char.is_ascii_digit() {
                         break;
                     }
-                    chars.push(*peeked_char);
+                    digits.push(*peeked_char);
                     it.next();
                 }
-                //TODO
-                let Ok(n) = BigUint::from_str(&chars.iter().collect::<String>()) else {
-                    return Err(TokenizeError { index });
+                let Ok(n) = BigUint::from_str(&digits) else {
+                    return Err(ArithmeticError::InvalidToken(index));
                 };
                 Token::Number(n)
             }
@@ -54,7 +49,7 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, TokenizeError> {
                 continue;
             }
             _ => {
-                return Err(TokenizeError { index });
+                return Err(ArithmeticError::InvalidToken(index));
             }
         };
 
@@ -62,12 +57,6 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, TokenizeError> {
     }
 
     Ok(tokens)
-}
-
-impl fmt::Display for TokenizeError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Invalid token at index: {}", self.index)
-    }
 }
 
 #[cfg(test)]
@@ -94,6 +83,9 @@ mod tests {
 
     #[test]
     fn test_error_string() {
-        assert_eq!(tokenize("1+asd*(12/234)"), Err(TokenizeError { index: 2 }));
+        assert_eq!(
+            tokenize("1+asd*(12/234)"),
+            Err(ArithmeticError::InvalidToken(2))
+        );
     }
 }

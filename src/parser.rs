@@ -1,6 +1,5 @@
-use crate::tokenizer::Token;
+use crate::{error::ArithmeticError, tokenizer::Token};
 use num_bigint::BigUint;
-use std::{error::Error, fmt};
 
 #[derive(Debug, PartialEq)]
 pub enum Expr {
@@ -23,7 +22,7 @@ pub enum Factor {
     Negative(Box<Factor>),
 }
 
-pub fn parse_expr(tokens: &[Token]) -> Result<Expr, ParserError> {
+pub fn parse_expr(tokens: &[Token]) -> Result<Expr, ArithmeticError> {
     let mut it = tokens.iter().enumerate();
 
     while let Some((index, token)) = it.next() {
@@ -42,7 +41,7 @@ pub fn parse_expr(tokens: &[Token]) -> Result<Expr, ParserError> {
             }
             Token::LeftPar => {
                 if !matching_paranthesis(it.by_ref()) {
-                    return Err(ParserError { t: "Expected `)`" });
+                    return Err(ArithmeticError::UnclosedParanthesis);
                 }
             }
             _ => {
@@ -55,34 +54,29 @@ pub fn parse_expr(tokens: &[Token]) -> Result<Expr, ParserError> {
     Ok(Expr::Term(parse_term(tokens)?))
 }
 
-fn parse_term(v: &[Token]) -> Result<Term, ParserError> {
+fn parse_term(v: &[Token]) -> Result<Term, ArithmeticError> {
     let mut it = v.iter().enumerate();
 
-    loop {
-        let t = &it.next();
-
-        match t {
-            None => {
-                break;
-            }
-            Some((i, Token::Mult)) => {
+    while let Some((index, token)) = it.next() {
+        match token {
+            Token::Mult => {
                 return Ok(Term::Mult(
-                    Box::from(parse_term(&v[0..*i])?),
-                    parse_factor(&v[i + 1..])?,
+                    Box::from(parse_term(&v[0..index])?),
+                    parse_factor(&v[index + 1..])?,
                 ));
             }
-            Some((i, Token::Div)) => {
+            Token::Div => {
                 return Ok(Term::Div(
-                    Box::from(parse_term(&v[0..*i])?),
-                    parse_factor(&v[i + 1..])?,
+                    Box::from(parse_term(&v[0..index])?),
+                    parse_factor(&v[index + 1..])?,
                 ));
             }
-            Some((_, Token::LeftPar)) => {
+            Token::LeftPar => {
                 if !matching_paranthesis(it.by_ref()) {
-                    return Err(ParserError { t: "Expected `)`" });
+                    return Err(ArithmeticError::UnclosedParanthesis);
                 }
             }
-            Some(_) => {
+            _ => {
                 continue;
             }
         }
@@ -92,13 +86,10 @@ fn parse_term(v: &[Token]) -> Result<Term, ParserError> {
     Ok(Term::Factor(parse_factor(v)?))
 }
 
-fn parse_factor(tokens: &[Token]) -> Result<Factor, ParserError> {
+fn parse_factor(tokens: &[Token]) -> Result<Factor, ArithmeticError> {
     let mut it = tokens.iter();
 
     match &mut it.next() {
-        None => Err(ParserError {
-            t: "Expected Number",
-        }),
         Some(Token::Number(n)) if it.next().is_none() => Ok(Factor::Number(n.clone())),
         Some(Token::Minus) => Ok(Factor::Negative(Box::from(parse_factor(&tokens[1..])?))),
         Some(Token::LeftPar) => {
@@ -107,25 +98,10 @@ fn parse_factor(tokens: &[Token]) -> Result<Factor, ParserError> {
                     &tokens[1..tokens.len() - 1],
                 )?)))
             } else {
-                Err(ParserError { t: "Expected `)`" })
+                Err(ArithmeticError::UnclosedParanthesis)
             }
         }
-        Some(_) => Err(ParserError {
-            t: "Expected Expression",
-        }),
-    }
-}
-
-#[derive(PartialEq, Eq, Debug)]
-pub struct ParserError {
-    t: &'static str,
-}
-
-impl Error for ParserError {}
-
-impl fmt::Display for ParserError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.t)
+        _ => Err(ArithmeticError::ExpectedNumber),
     }
 }
 

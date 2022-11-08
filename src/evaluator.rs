@@ -1,10 +1,11 @@
-use std::{error::Error, fmt::Display};
-
 use num_bigint::{BigInt, Sign};
 
-use crate::parser::{Expr, Factor, Term};
+use crate::{
+    error::ArithmeticError,
+    parser::{Expr, Factor, Term},
+};
 
-pub fn eval_expr(e: Expr) -> Result<BigInt, EvaluationError> {
+pub fn eval_expr(e: Expr) -> Result<BigInt, ArithmeticError> {
     match e {
         Expr::Sum(e, t) => Ok(eval_expr(*e)? + eval_term(t)?),
         Expr::Subtract(e, t) => Ok(eval_expr(*e)? - eval_term(t)?),
@@ -12,40 +13,25 @@ pub fn eval_expr(e: Expr) -> Result<BigInt, EvaluationError> {
     }
 }
 
-fn eval_term(t: Term) -> Result<BigInt, EvaluationError> {
+fn eval_term(t: Term) -> Result<BigInt, ArithmeticError> {
     match t {
         Term::Mult(t, f) => Ok(eval_term(*t)? * eval_factor(f)?),
         Term::Div(t, f) => {
             let lhs = eval_term(*t)?;
             lhs.checked_div(&eval_factor(f)?)
-                .ok_or(EvaluationError::DivisionByZero(lhs))
+                .ok_or(ArithmeticError::DivisionByZero(lhs))
         }
         Term::Factor(f) => eval_factor(f),
     }
 }
 
-fn eval_factor(f: Factor) -> Result<BigInt, EvaluationError> {
+fn eval_factor(f: Factor) -> Result<BigInt, ArithmeticError> {
     match f {
         Factor::Number(n) => Ok(BigInt::from_biguint(Sign::Plus, n)),
         Factor::Parenthesis(e) => eval_expr(*e),
         Factor::Negative(n) => Ok(-(eval_factor(*n)?)),
     }
 }
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum EvaluationError {
-    DivisionByZero(BigInt),
-}
-
-impl Display for EvaluationError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            EvaluationError::DivisionByZero(n) => write!(f, "Attempted dividing {} by zero", n),
-        }
-    }
-}
-
-impl Error for EvaluationError {}
 
 #[cfg(test)]
 mod tests {
@@ -73,7 +59,7 @@ mod tests {
                 Box::from(Term::Factor(Factor::Number(BigUint::from(120usize)))),
                 Factor::Number(BigUint::from(0usize)),
             ))),
-            Err(EvaluationError::DivisionByZero(BigInt::from(120)))
+            Err(ArithmeticError::DivisionByZero(BigInt::from(120)))
         )
     }
 
