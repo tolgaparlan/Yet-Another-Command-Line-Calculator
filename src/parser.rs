@@ -30,38 +30,32 @@ pub struct ParserError {
 
 impl Error for ParserError {}
 
-// pub fn parse(v: Vec<Token>) -> Result<Expr, ParserError> {
-//     parse_expr(&v[..])
-// }
+pub fn parse_expr(tokens: &[Token]) -> Result<Expr, ParserError> {
+    let mut it = tokens.iter().enumerate();
 
-pub fn parse_expr(v: &[Token]) -> Result<Expr, ParserError> {
-    let mut it = v.iter().enumerate();
-
-    loop {
-        let t = it.next();
-
-        match t {
-            None => {
-                break;
-            }
-            Some((i, Token::Plus)) => {
+    while let Some((index, token)) = it.next() {
+        match token {
+            Token::Plus => {
                 return Ok(Expr::Sum(
-                    Box::from(parse_expr(&v[0..i])?),
-                    parse_term(&v[i + 1..])?,
+                    Box::from(parse_expr(&tokens[0..index])?),
+                    parse_term(&tokens[index + 1..])?,
                 ));
             }
-            Some((i, Token::Minus)) if i > 0 => {
+            Token::Minus if index > 0 => {
                 return Ok(Expr::Subtract(
-                    Box::from(parse_expr(&v[0..i])?),
-                    parse_term(&v[i + 1..])?,
+                    Box::from(parse_expr(&tokens[0..index])?),
+                    parse_term(&tokens[index + 1..])?,
                 ));
             }
-            Some((_, Token::LeftPar)) => {
+            Token::LeftPar => {
                 // iterate until the matching right parenthesis
                 let mut left_count = 1;
                 for (_, &t) in it.by_ref() {
-                    left_count += i32::from(t == Token::LeftPar);
-                    left_count -= i32::from(t == Token::RightPar);
+                    left_count += match t {
+                        Token::LeftPar => 1,
+                        Token::RightPar => -1,
+                        _ => 0,
+                    };
                     if left_count == 0 {
                         break;
                     }
@@ -72,17 +66,17 @@ pub fn parse_expr(v: &[Token]) -> Result<Expr, ParserError> {
                     });
                 }
             }
-            Some(_) => {
+            _ => {
                 continue;
             }
         }
     }
 
-    // reached the end of the expression without matching must be a term
-    Ok(Expr::Term(parse_term(v)?))
+    // reached the end of the expression without matching -> must be a term
+    Ok(Expr::Term(parse_term(tokens)?))
 }
 
-pub fn parse_term(v: &[Token]) -> Result<Term, ParserError> {
+fn parse_term(v: &[Token]) -> Result<Term, ParserError> {
     let mut it = v.iter().enumerate();
 
     loop {
@@ -130,7 +124,7 @@ pub fn parse_term(v: &[Token]) -> Result<Term, ParserError> {
     Ok(Term::Factor(parse_factor(v)?))
 }
 
-pub fn parse_factor(v: &[Token]) -> Result<Factor, ParserError> {
+fn parse_factor(v: &[Token]) -> Result<Factor, ParserError> {
     let mut it = v.iter();
 
     match it.next() {
