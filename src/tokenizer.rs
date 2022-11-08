@@ -1,6 +1,4 @@
 use std::fmt;
-use std::iter::Peekable;
-use std::str::Chars;
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum Token {
@@ -11,7 +9,6 @@ pub enum Token {
     Div,
     LeftPar,
     RightPar,
-    End,
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -21,57 +18,44 @@ pub struct TokenizeError {
 
 impl std::error::Error for TokenizeError {}
 
-struct CharStream<'a> {
-    index: usize,
-    iterator: Peekable<Chars<'a>>,
-}
-
 pub fn tokenize(line: &str) -> Result<Vec<Token>, TokenizeError> {
-    let mut char_stream = CharStream::new(line.chars().peekable());
+    let mut it = line.chars().enumerate().peekable();
     let mut tokens = vec![];
 
-    loop {
-        let c = char_stream.next();
-
-        let tok = match c {
-            '\0' => Token::End,
+    while let Some((index, c)) = it.next() {
+        let token = match c {
             '+' => Token::Plus,
             '-' => Token::Minus,
             '*' => Token::Mult,
             '/' => Token::Div,
             '(' => Token::LeftPar,
             ')' => Token::RightPar,
-            n if c.is_numeric() => {
-                let mut chars = vec![n];
-                while char_stream.peek().is_numeric() {
-                    chars.push(char_stream.next());
-                }
-                let kek = chars.iter().collect::<String>();
-                let n: u64 = match kek.parse::<u64>() {
-                    Ok(n) => n,
-                    Err(_) => {
-                        return Err(TokenizeError {
-                            index: char_stream.index,
-                        })
+            c if c.is_ascii_digit() => {
+                // Consume a number token
+                let mut chars = vec![c];
+
+                // peek while searching the boundary of the number
+                while let Some((_, peeked_char)) = it.peek() {
+                    if !peeked_char.is_ascii_digit() {
+                        break;
                     }
+                    chars.push(*peeked_char);
+                    it.next();
+                }
+                let Ok(n) = chars.iter().collect::<String>().parse::<u64>() else {
+                    return Err(TokenizeError { index });
                 };
                 Token::Number(n)
             }
-            _ if c.is_whitespace() => {
+            c if c.is_whitespace() => {
                 continue;
             }
             _ => {
-                return Err(TokenizeError {
-                    index: char_stream.index,
-                });
+                return Err(TokenizeError { index });
             }
         };
 
-        if let Token::End = tok {
-            break;
-        }
-
-        tokens.push(tok);
+        tokens.push(token);
     }
 
     Ok(tokens)
@@ -80,21 +64,6 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, TokenizeError> {
 impl fmt::Display for TokenizeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Invalid token at index: {}", self.index)
-    }
-}
-
-impl<'a> CharStream<'a> {
-    fn new(iterator: Peekable<Chars>) -> CharStream {
-        CharStream { index: 0, iterator }
-    }
-
-    fn next(&mut self) -> char {
-        self.index += 1;
-        self.iterator.next().unwrap_or('\0')
-    }
-
-    fn peek(&mut self) -> char {
-        self.iterator.peek().cloned().unwrap_or('\0')
     }
 }
 
@@ -122,6 +91,6 @@ mod tests {
 
     #[test]
     fn test_error() {
-        assert_eq!(tokenize("1+asd*(12/234)"), Err(TokenizeError { index: 3 }));
+        assert_eq!(tokenize("1+asd*(12/234)"), Err(TokenizeError { index: 2 }));
     }
 }
