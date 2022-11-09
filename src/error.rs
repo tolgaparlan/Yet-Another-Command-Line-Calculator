@@ -8,7 +8,7 @@ pub enum CalcError {
     DivisionByZero(BigInt),
     #[error("Expected `)`")]
     UnclosedParanthesis,
-    #[error("Expected Number")]
+    #[error("Invalid Expresssion")]
     InvalidExpression,
     #[error("Unknown Variable {0}")]
     UnknownVariable(String),
