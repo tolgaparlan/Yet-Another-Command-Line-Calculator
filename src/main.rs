@@ -27,7 +27,7 @@ fn main() {
             "exit" => exit(0),
             "vars" => {
                 for (var, val) in variables.iter() {
-                    println!(" \\>{} = {}", var, val);
+                    println!("\\> {} = {}", var, val);
                 }
             }
             tokens => {

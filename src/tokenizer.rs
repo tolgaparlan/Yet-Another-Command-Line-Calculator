@@ -37,7 +37,7 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, crate::error::CalcError> {
 
                 // peek while searching the boundary of the number
                 while let Some((_, peeked_char)) = it.peek() {
-                    if !peeked_char.is_ascii_digit() {
+                    if !peeked_char.is_ascii_alphanumeric() {
                         break;
                     }
                     digits.push(*peeked_char);
@@ -83,8 +83,8 @@ mod tests {
     #[test]
     fn test_tokenize() {
         assert_eq!(
-            tokenize("1+123*(12/234)").unwrap(),
-            vec![
+            tokenize("1+123*(12/234)"),
+            Ok(vec![
                 Token::Number(1usize.into()),
                 Token::Plus,
                 Token::Number(123usize.into()),
@@ -94,12 +94,43 @@ mod tests {
                 Token::Div,
                 Token::Number(234usize.into()),
                 Token::RightPar
-            ]
+            ])
         );
     }
 
     #[test]
-    fn test_error_string() {
-        assert_eq!(tokenize("1+asd*(12/234)"), Err(CalcError::InvalidToken(2)));
+    fn test_tokenize_variable() {
+        assert_eq!(
+            tokenize("asd=sdf+(ghj/2)"),
+            Ok(vec![
+                Token::Variable("asd".to_string()),
+                Token::Equals,
+                Token::Variable("sdf".to_string()),
+                Token::Plus,
+                Token::LeftPar,
+                Token::Variable("ghj".to_string()),
+                Token::Div,
+                Token::Number(BigUint::from(2usize)),
+                Token::RightPar
+            ])
+        );
+    }
+
+    #[test]
+    fn test_invalid_number() {
+        assert_eq!(tokenize("1+1asd*(12/234)"), Err(CalcError::InvalidToken(2)));
+    }
+
+    #[test]
+    fn test_invalid_character() {
+        assert_eq!(tokenize("1+asd;*(12/234)"), Err(CalcError::InvalidToken(5)));
+    }
+
+    #[test]
+    fn test_variable_with_digit() {
+        assert_eq!(
+            tokenize("asdf1a"),
+            Ok(vec![Token::Variable("asdf1a".to_string())])
+        );
     }
 }

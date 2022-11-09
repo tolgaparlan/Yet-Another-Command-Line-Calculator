@@ -152,7 +152,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parser() {
+    fn test_parser_expr() {
         assert_eq!(
             parse_expr(&[
                 Token::Number(1usize.into()),
@@ -176,5 +176,37 @@ mod tests {
                 ),
             ))
         );
+    }
+
+    #[test]
+    fn test_parser_assignment() {
+        assert_eq!(
+            parse_assignment(&[
+                Token::Variable("a".to_string()),
+                Token::Equals,
+                Token::Number(12usize.into()),
+            ]),
+            Ok(Assignment::Assign(
+                "a".to_string(),
+                Expr::Term(Term::Factor(Factor::Number(12usize.into())))
+            ))
+        )
+    }
+
+    #[test]
+    fn test_parser_factor_paran() {
+        assert_eq!(
+            parse_factor(&[
+                Token::LeftPar,
+                Token::Number(12usize.into()),
+                Token::Div,
+                Token::Number(234usize.into()),
+                Token::RightPar
+            ]),
+            Ok(Factor::Parenthesis(Box::new(Expr::Term(Term::Div(
+                Box::new(Term::Factor(Factor::Number(12usize.into()))),
+                Factor::Number(234usize.into())
+            )))))
+        )
     }
 }

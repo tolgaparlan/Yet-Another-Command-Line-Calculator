@@ -99,4 +99,33 @@ mod tests {
             Ok(BigInt::from(-120))
         )
     }
+
+    #[test]
+    fn test_evaluation_assignment() {
+        let mut vars = HashMap::new();
+        assert_eq!(
+            eval_assignment(
+                Assignment::Assign(
+                    String::from("asd"),
+                    Expr::Term(Term::Factor(Factor::Number(BigUint::from(123usize)))),
+                ),
+                &mut vars,
+            ),
+            Ok(BigInt::from(123))
+        );
+        assert_eq!(vars[&String::from("asd")], BigInt::from(123));
+    }
+
+    #[test]
+    fn test_evaluation_variable() {
+        let mut vars = HashMap::from([(String::from("asd"), BigInt::from(123))]);
+
+        assert_eq!(
+            eval_factor(
+                Factor::Negative(Box::new(Factor::Variable(String::from("asd")))),
+                &mut vars
+            ),
+            Ok(BigInt::from(-123))
+        )
+    }
 }
