@@ -3,14 +3,25 @@ use std::collections::HashMap;
 use num_bigint::{BigInt, Sign};
 
 use crate::{
-    error::ArithmeticError,
-    parser::{Expr, Factor, Term},
+    error::CalcError,
+    parser::{Assignment, Expr, Factor, Term},
 };
 
-pub fn eval_expr(
-    expr: Expr,
-    variables: &mut HashMap<&str, BigInt>,
-) -> Result<BigInt, ArithmeticError> {
+pub fn eval_assignment(
+    ass: Assignment,
+    variables: &mut HashMap<String, BigInt>,
+) -> Result<BigInt, CalcError> {
+    match ass {
+        Assignment::Assign(var, expr) => {
+            let res = eval_expr(expr, variables)?;
+            variables.entry(var).or_insert_with(|| res.clone());
+            Ok(res)
+        }
+        Assignment::Expr(expr) => eval_expr(expr, variables),
+    }
+}
+
+pub fn eval_expr(expr: Expr, variables: &mut HashMap<String, BigInt>) -> Result<BigInt, CalcError> {
     match expr {
         Expr::Sum(e, t) => Ok(eval_expr(*e, variables)? + eval_term(t, variables)?),
         Expr::Subtract(e, t) => Ok(eval_expr(*e, variables)? - eval_term(t, variables)?),
@@ -18,26 +29,27 @@ pub fn eval_expr(
     }
 }
 
-fn eval_term(t: Term, variables: &mut HashMap<&str, BigInt>) -> Result<BigInt, ArithmeticError> {
+fn eval_term(t: Term, variables: &mut HashMap<String, BigInt>) -> Result<BigInt, CalcError> {
     match t {
         Term::Mult(t, f) => Ok(eval_term(*t, variables)? * eval_factor(f, variables)?),
         Term::Div(t, f) => {
             let lhs = eval_term(*t, variables)?;
             lhs.checked_div(&eval_factor(f, variables)?)
-                .ok_or(ArithmeticError::DivisionByZero(lhs))
+                .ok_or(CalcError::DivisionByZero(lhs))
         }
         Term::Factor(f) => eval_factor(f, variables),
     }
 }
 
-fn eval_factor(
-    f: Factor,
-    variables: &mut HashMap<&str, BigInt>,
-) -> Result<BigInt, ArithmeticError> {
+fn eval_factor(f: Factor, variables: &mut HashMap<String, BigInt>) -> Result<BigInt, CalcError> {
     match f {
         Factor::Number(n) => Ok(BigInt::from_biguint(Sign::Plus, n)),
         Factor::Parenthesis(e) => eval_expr(*e, variables),
         Factor::Negative(n) => Ok(-(eval_factor(*n, variables)?)),
+        Factor::Variable(var) => variables
+            .get(var.as_str())
+            .ok_or(CalcError::UnknownVariable(var))
+            .cloned(),
     }
 }
 
@@ -73,7 +85,7 @@ mod tests {
                 )),
                 &mut HashMap::new()
             ),
-            Err(ArithmeticError::DivisionByZero(BigInt::from(120)))
+            Err(CalcError::DivisionByZero(BigInt::from(120)))
         )
     }
 

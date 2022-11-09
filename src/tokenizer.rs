@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use num_bigint::BigUint;
 
-use crate::error::ArithmeticError;
+use crate::error::CalcError;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Token {
@@ -13,10 +13,12 @@ pub enum Token {
     Div,
     LeftPar,
     RightPar,
+    Equals,
+    Variable(String),
 }
 
 /// Makes a list of tokens from given string. Can fail given unrecognised characters
-pub fn tokenize(line: &str) -> Result<Vec<Token>, crate::error::ArithmeticError> {
+pub fn tokenize(line: &str) -> Result<Vec<Token>, crate::error::CalcError> {
     let mut it = line.chars().enumerate().peekable();
     let mut tokens = vec![];
 
@@ -28,6 +30,7 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, crate::error::ArithmeticError>
             '/' => Token::Div,
             '(' => Token::LeftPar,
             ')' => Token::RightPar,
+            '=' => Token::Equals,
             c if c.is_ascii_digit() => {
                 // Consume a number token
                 let mut digits = String::from(c);
@@ -41,15 +44,29 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, crate::error::ArithmeticError>
                     it.next();
                 }
                 let Ok(n) = BigUint::from_str(&digits) else {
-                    return Err(ArithmeticError::InvalidToken(index));
+                    return Err(CalcError::InvalidToken(index));
                 };
                 Token::Number(n)
+            }
+            c if c.is_ascii_alphabetic() => {
+                // Consume a variable
+                let mut letters = String::from(c);
+
+                // all remaining letters of a variable must be alphanumeric
+                while let Some((_, peeked_char)) = it.peek() {
+                    if !peeked_char.is_ascii_alphanumeric() {
+                        break;
+                    }
+                    letters.push(*peeked_char);
+                    it.next();
+                }
+                Token::Variable(letters)
             }
             c if c.is_whitespace() => {
                 continue;
             }
             _ => {
-                return Err(ArithmeticError::InvalidToken(index));
+                return Err(CalcError::InvalidToken(index));
             }
         };
 
@@ -83,9 +100,6 @@ mod tests {
 
     #[test]
     fn test_error_string() {
-        assert_eq!(
-            tokenize("1+asd*(12/234)"),
-            Err(ArithmeticError::InvalidToken(2))
-        );
+        assert_eq!(tokenize("1+asd*(12/234)"), Err(CalcError::InvalidToken(2)));
     }
 }

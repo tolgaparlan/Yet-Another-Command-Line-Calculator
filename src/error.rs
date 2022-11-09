@@ -1,7 +1,7 @@
 use num_bigint::BigInt;
 
 #[derive(thiserror::Error, Debug, PartialEq, Eq)]
-pub enum ArithmeticError {
+pub enum CalcError {
     #[error("Invalid token at index {0}")]
     InvalidToken(usize),
     #[error("Attempted dividing {0} by zero")]
@@ -9,5 +9,7 @@ pub enum ArithmeticError {
     #[error("Expected `)`")]
     UnclosedParanthesis,
     #[error("Expected Number")]
-    ExpectedNumber,
+    InvalidExpression,
+    #[error("Unknown Variable {0}")]
+    UnknownVariable(String),
 }
