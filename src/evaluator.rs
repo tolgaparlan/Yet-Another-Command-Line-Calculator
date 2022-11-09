@@ -14,7 +14,7 @@ pub fn eval_assignment(
     match ass {
         Assignment::Assign(var, expr) => {
             let res = eval_expr(expr, variables)?;
-            variables.entry(var).or_insert_with(|| res.clone());
+            variables.insert(var, res.clone());
             Ok(res)
         }
         Assignment::Expr(expr) => eval_expr(expr, variables),
@@ -127,5 +127,24 @@ mod tests {
             ),
             Ok(BigInt::from(-123))
         )
+    }
+
+    #[test]
+    fn test_evaluation_assign_twice() {
+        let mut vars = HashMap::from([(String::from("asd"), BigInt::from(123))]);
+
+        assert_eq!(
+            eval_assignment(
+                Assignment::Assign(
+                    String::from("asd"),
+                    Expr::Term(Term::Factor(Factor::Negative(Box::new(Factor::Variable(
+                        String::from("asd")
+                    ))))),
+                ),
+                &mut vars,
+            ),
+            Ok(BigInt::from(-123))
+        );
+        assert_eq!(vars[&String::from("asd")], BigInt::from(-123));
     }
 }

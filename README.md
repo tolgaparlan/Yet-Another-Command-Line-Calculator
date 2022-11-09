@@ -5,7 +5,13 @@ Run with `cargo run`.
 
 Starts a REPL to evaluate arithmetic expressions and produce the calculated result at the next line.
 
-Supports arbitrarily large number
+Supports arbitrarily large numbers, as well as variables.
+
+So far only has addition, subtraction, multiplication and division. Keeps proper operator precedence.
+
+Commands:
+- `exit`: Stops the REPL
+- `vars`: Prints all variables currently stored in memory
 
 ```
 ./simple-calculator
@@ -21,7 +27,14 @@ Supports arbitrarily large number
 Expected Number
 10+(5/2)
 \> 12
+num = (10+(5/2))
+\> 12
+num * 12
+\> 144
+num2 = 99/2
+\> 49
+vars
+\> num = 12
+\> num2 = 49
 exit
 ```
-
-So far only supports addition, subtraction, multiplication and division. Keeps proper operator precedence.
