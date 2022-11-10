@@ -1,6 +1,9 @@
 use crate::{error::CalcError, tokenizer::Token};
 use num_bigint::BigUint;
 
+// This must not be an alphanumeric value in order to keep the parsing logic simple
+pub const RES_VAR: char = '$';
+
 #[derive(Debug, PartialEq)]
 pub enum Assignment {
     Assign(String, Expr),
@@ -117,6 +120,9 @@ fn parse_factor(tokens: &[Token]) -> Result<Factor, CalcError> {
     match &mut it.next() {
         Some(Token::Number(n)) if it.next().is_none() => Ok(Factor::Number(n.clone())),
         Some(Token::Variable(var)) if it.next().is_none() => Ok(Factor::Variable(var.to_string())),
+        Some(Token::ResultVariable) if it.next().is_none() => {
+            Ok(Factor::Variable(RES_VAR.to_string()))
+        }
         Some(Token::Minus) => Ok(Factor::Negative(Box::from(parse_factor(&tokens[1..])?))),
         Some(Token::LeftPar) => {
             if let Some(Token::RightPar) = it.last() {
@@ -207,6 +213,34 @@ mod tests {
                 Box::new(Term::Factor(Factor::Number(12usize.into()))),
                 Factor::Number(234usize.into())
             )))))
+        )
+    }
+
+    #[test]
+    fn test_parser_res_variable() {
+        assert_eq!(
+            parse_assignment(&[
+                Token::Variable("a".to_string()),
+                Token::Equals,
+                Token::ResultVariable,
+            ]),
+            Ok(Assignment::Assign(
+                "a".to_string(),
+                Expr::Term(Term::Factor(Factor::Variable(RES_VAR.to_string())))
+            ))
+        )
+    }
+
+    #[test]
+    fn test_parser_res_variable_lhs() {
+        // Result variable cannot be at the left hand side of an assignment
+        assert_eq!(
+            parse_assignment(&[
+                Token::ResultVariable,
+                Token::Equals,
+                Token::Variable("a".to_string()),
+            ]),
+            Err(CalcError::InvalidExpression)
         )
     }
 }
