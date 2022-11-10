@@ -13,28 +13,24 @@ Commands:
 - `exit`: Stops the REPL
 - `vars`: Prints all variables currently stored in memory
 
+Special Variables:
+- `$`: Special variable to hold the last result 
+
 ```
-./simple-calculator
 1232342353453*34545364587894567456
 \> 42571715897137916732960503025568
-123+0
-\> 123
-123+1324
-\> 1447
-23-1123
-\> -1100
+$ / 123
+\> 346111511358844851487483764435
 23-
-Expected Number
+Invalid Expresssion
 10+(5/2)
 \> 12
-num = (10+(5/2))
+num = $
 \> 12
 num * 12
 \> 144
-num2 = 99/2
-\> 49
 vars
 \> num = 12
-\> num2 = 49
+\> $ = 144
 exit
 ```

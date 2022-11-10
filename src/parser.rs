@@ -1,6 +1,7 @@
 use crate::{error::CalcError, tokenizer::Token};
 use num_bigint::BigUint;
 
+// This must not be an alphanumeric value in order to keep the parsing logic simple
 pub const RES_VAR: char = '$';
 
 #[derive(Debug, PartialEq)]
