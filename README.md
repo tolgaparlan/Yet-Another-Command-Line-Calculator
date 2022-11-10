@@ -1,3 +1,5 @@
+![main branch](https://github.com/tolgaparlan/Yet-Another-Command-Line-Calculator/actions/workflows/ci.yml/badge.svg)
+
 # README 
 A basic integer arithmetic calculator I have built with Rust for self-learning. 
 
