@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use num_bigint::BigUint;
 
-use crate::error::CalcError;
+use crate::{error::CalcError, parser::RES_VAR};
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Token {
@@ -15,6 +15,7 @@ pub enum Token {
     RightPar,
     Equals,
     Variable(String),
+    ResultVariable, // Special variable `$` to store the result of the last operation
 }
 
 /// Makes a list of tokens from given string. Can fail given unrecognised characters
@@ -31,6 +32,7 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, crate::error::CalcError> {
             '(' => Token::LeftPar,
             ')' => Token::RightPar,
             '=' => Token::Equals,
+            RES_VAR => Token::ResultVariable,
             c if c.is_ascii_digit() => {
                 // Consume a number token
                 let mut digits = String::from(c);
@@ -132,5 +134,13 @@ mod tests {
             tokenize("asdf1a"),
             Ok(vec![Token::Variable("asdf1a".to_string())])
         );
+    }
+
+    #[test]
+    fn test_res_variable() {
+        assert_eq!(
+            tokenize(&RES_VAR.to_string()),
+            Ok(vec![Token::ResultVariable])
+        )
     }
 }

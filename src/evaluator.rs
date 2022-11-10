@@ -4,7 +4,7 @@ use num_bigint::{BigInt, Sign};
 
 use crate::{
     error::CalcError,
-    parser::{Assignment, Expr, Factor, Term},
+    parser::{Assignment, Expr, Factor, Term, RES_VAR},
 };
 
 pub fn eval_assignment(
@@ -17,7 +17,12 @@ pub fn eval_assignment(
             variables.insert(var, res.clone());
             Ok(res)
         }
-        Assignment::Expr(expr) => eval_expr(expr, variables),
+        Assignment::Expr(expr) => {
+            // Save the result in the special result variable
+            let res = eval_expr(expr, variables)?;
+            variables.insert(RES_VAR.to_string(), res.clone());
+            Ok(res)
+        }
     }
 }
 
@@ -146,5 +151,21 @@ mod tests {
             Ok(BigInt::from(-123))
         );
         assert_eq!(vars[&String::from("asd")], BigInt::from(-123));
+    }
+
+    #[test]
+    fn test_evaluation_res_variable_assign() {
+        // Must assign an expression result in the special variable
+        let mut vars = HashMap::new();
+
+        eval_assignment(
+            Assignment::Expr(Expr::Term(Term::Factor(Factor::Negative(Box::new(
+                Factor::Number(BigUint::from(120usize)),
+            ))))),
+            &mut vars,
+        )
+        .unwrap();
+
+        assert_eq!(vars[&RES_VAR.to_string()], BigInt::from(-120));
     }
 }
