@@ -8,6 +8,11 @@ use crate::{error::CalcError, parser::RES_VAR, special_function::SPECIAL_FUNCTIO
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Token {
     Number(BigUint),
+    BitwiseAnd,
+    BitwiseOr,
+    BitwiseXor,
+    BitshiftRight,
+    BitshiftLeft,
     Plus,
     Minus,
     Mult,
@@ -35,6 +40,21 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, crate::error::CalcError> {
             '(' => Token::LeftPar,
             ')' => Token::RightPar,
             '=' => Token::Equals,
+            '&' => Token::BitwiseAnd,
+            '|' => Token::BitwiseOr,
+            '^' => Token::BitwiseXor,
+            '>' => {
+                let Some((_, '>')) = it.next() else {
+                    return Err(CalcError::InvalidToken(index));
+                };
+                Token::BitshiftRight
+            }
+            '<' => {
+                let Some((_, '<')) = it.next() else {
+                    return Err(CalcError::InvalidToken(index));
+                };
+                Token::BitshiftLeft
+            }
             '0' => {
                 // Consume a hex or binary number
                 match it.peek() {
@@ -256,6 +276,20 @@ mod tests {
         assert_eq!(
             tokenize("exit"),
             Err(CalcError::SpecialVariableInvalidUse(String::from("exit")))
+        )
+    }
+
+    #[test]
+    fn test_tokenize_bitwise() {
+        assert_eq!(
+            tokenize("|>><<&^"),
+            Ok(vec![
+                Token::BitwiseOr,
+                Token::BitshiftRight,
+                Token::BitshiftLeft,
+                Token::BitwiseAnd,
+                Token::BitwiseXor,
+            ])
         )
     }
 }
