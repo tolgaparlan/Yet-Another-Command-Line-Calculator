@@ -15,6 +15,7 @@ pub enum Expr {
     Sum(Box<Expr>, Term),
     Subtract(Box<Expr>, Term),
     Term(Term),
+    Negative(Box<Expr>),
 }
 
 #[derive(Debug, PartialEq)]
@@ -29,7 +30,6 @@ pub enum Factor {
     Number(BigUint),
     Variable(String),
     Parenthesis(Box<Expr>),
-    Negative(Box<Factor>),
 }
 
 pub fn parse_assignment(tokens: &[Token]) -> Result<Assignment, CalcError> {
@@ -51,7 +51,12 @@ pub fn parse_assignment(tokens: &[Token]) -> Result<Assignment, CalcError> {
 }
 
 pub fn parse_expr(tokens: &[Token]) -> Result<Expr, CalcError> {
-    let mut it = tokens.iter().enumerate();
+    let mut it = tokens.iter().enumerate().peekable();
+
+    // If the first token is a minus, this is a negative
+    if let Some((_, &Token::Minus)) = it.peek() {
+        return Ok(Expr::Negative(Box::new(parse_expr(&tokens[1..])?)));
+    }
 
     while let Some((index, token)) = it.next() {
         match token {
@@ -123,7 +128,7 @@ fn parse_factor(tokens: &[Token]) -> Result<Factor, CalcError> {
         Some(Token::ResultVariable) if it.next().is_none() => {
             Ok(Factor::Variable(RES_VAR.to_string()))
         }
-        Some(Token::Minus) => Ok(Factor::Negative(Box::from(parse_factor(&tokens[1..])?))),
+        // Some(Token::Minus) => Ok(Factor::Negative(Box::from(parse_factor(&tokens[1..])?))),
         Some(Token::LeftPar) => {
             if let Some(Token::RightPar) = it.last() {
                 Ok(Factor::Parenthesis(Box::from(parse_expr(
