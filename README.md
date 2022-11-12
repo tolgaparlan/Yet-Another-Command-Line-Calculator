@@ -14,6 +14,11 @@ So far only has addition, subtraction, multiplication and division. Keeps proper
 Commands:
 - `exit`: Stops the REPL
 - `vars`: Prints all variables currently stored in memory
+- `dec`: Changes the display mode to decimal (default)
+- `hex`: Changes the display mode to hexadecimal representation
+- `bin`: Changes the display mode to binary representation
+
+Command strings cannot be used as variable names.
 
 Special Variables:
 - `$`: Special variable to hold the last result 
@@ -31,6 +36,10 @@ num = $
 \> 12
 num * 12
 \> 144
+vars
+\> num = 0xC
+\> $ = 0x90
+hex
 vars
 \> num = 12
 \> $ = 144
