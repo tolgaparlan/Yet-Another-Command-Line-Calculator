@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
 use num_bigint::{BigInt, Sign};
+use num_traits::{Signed, ToPrimitive};
 
 use crate::{
     error::CalcError,
-    parser::{Assign, Expr, Factor, Term, RES_VAR},
+    parser::{Assign, Expr, ExprBitwise, Factor, Term, RES_VAR},
 };
 
 /// Saves the result to the given hashtable, only returns the variable
@@ -16,20 +17,58 @@ pub fn eval_assignment(
 ) -> Result<String, CalcError> {
     match ass {
         Assign::Assign(var, expr) => {
-            let res = eval_expr(expr, variables)?;
+            let res = eval_expr_bitwise(expr, variables)?;
             variables.insert(var.clone(), res);
             Ok(var)
         }
-        Assign::Expr(expr) => {
+        Assign::ExprBitwise(expr) => {
             // Save the result in the special result variable
-            let res = eval_expr(expr, variables)?;
+            let res = eval_expr_bitwise(expr, variables)?;
             variables.insert(RES_VAR.to_string(), res);
             Ok(RES_VAR.to_string())
         }
     }
 }
 
-pub fn eval_expr(expr: Expr, variables: &mut HashMap<String, BigInt>) -> Result<BigInt, CalcError> {
+fn eval_expr_bitwise(
+    expr_bitwise: ExprBitwise,
+    variables: &mut HashMap<String, BigInt>,
+) -> Result<BigInt, CalcError> {
+    match expr_bitwise {
+        ExprBitwise::BitwiseOr(eb, e) => {
+            Ok(eval_expr_bitwise(*eb, variables)? | eval_expr(e, variables)?)
+        }
+        ExprBitwise::BitwiseAnd(eb, e) => {
+            Ok(eval_expr_bitwise(*eb, variables)? & eval_expr(e, variables)?)
+        }
+        ExprBitwise::BitwiseXor(eb, e) => {
+            Ok(eval_expr_bitwise(*eb, variables)? ^ eval_expr(e, variables)?)
+        }
+        ExprBitwise::BitshiftLeft(eb, e) => {
+            let rhs = eval_expr(e, variables)?;
+            if rhs.is_negative() {
+                return Err(CalcError::InvalidBitShiftNegative);
+            }
+            let Some(rhs) = rhs.to_u16() else {
+                return Err(CalcError::InvalidBitShiftTooLarge(rhs));
+            };
+            Ok(eval_expr_bitwise(*eb, variables)? << rhs)
+        }
+        ExprBitwise::BitshiftRight(eb, e) => {
+            let rhs = eval_expr(e, variables)?;
+            if rhs.is_negative() {
+                return Err(CalcError::InvalidBitShiftNegative);
+            }
+            let Some(rhs) = rhs.to_u16() else {
+                return Err(CalcError::InvalidBitShiftTooLarge(rhs));
+            };
+            Ok(eval_expr_bitwise(*eb, variables)? >> rhs)
+        }
+        ExprBitwise::Expr(e) => eval_expr(e, variables),
+    }
+}
+
+fn eval_expr(expr: Expr, variables: &mut HashMap<String, BigInt>) -> Result<BigInt, CalcError> {
     match expr {
         Expr::Sum(e, t) => Ok(eval_expr(*e, variables)? + eval_term(t, variables)?),
         Expr::Subtract(e, t) => Ok(eval_expr(*e, variables)? - eval_term(t, variables)?),
@@ -118,7 +157,9 @@ mod tests {
             eval_assignment(
                 Assign::Assign(
                     String::from("asd"),
-                    Expr::Term(Term::Factor(Factor::Number(BigUint::from(123usize)))),
+                    ExprBitwise::Expr(Expr::Term(Term::Factor(Factor::Number(BigUint::from(
+                        123usize
+                    ))))),
                 ),
                 &mut vars,
             ),
@@ -145,7 +186,9 @@ mod tests {
             eval_assignment(
                 Assign::Assign(
                     String::from("asd"),
-                    Expr::Term(Term::Factor(Factor::Number(BigUint::from(10usize)))),
+                    ExprBitwise::Expr(Expr::Term(Term::Factor(Factor::Number(BigUint::from(
+                        10usize
+                    ))))),
                 ),
                 &mut vars,
             ),
@@ -160,8 +203,8 @@ mod tests {
         let mut vars = HashMap::new();
 
         eval_assignment(
-            Assign::Expr(Expr::Term(Term::Factor(Factor::Number(BigUint::from(
-                120usize,
+            Assign::ExprBitwise(ExprBitwise::Expr(Expr::Term(Term::Factor(Factor::Number(
+                BigUint::from(120usize),
             ))))),
             &mut vars,
         )
@@ -182,5 +225,43 @@ mod tests {
             ),
             Ok(BigInt::from(1))
         )
+    }
+
+    #[test]
+    fn test_evaluation_shift_large() {
+        assert_eq!(
+            eval_expr_bitwise(
+                ExprBitwise::BitshiftRight(
+                    Box::new(ExprBitwise::Expr(Expr::Term(Term::Factor(Factor::Number(
+                        BigUint::from(1usize)
+                    ))))),
+                    Expr::Term(Term::Factor(Factor::Number(BigUint::from(
+                        u16::MAX as usize + 1
+                    ))))
+                ),
+                &mut HashMap::new()
+            ),
+            Err(CalcError::InvalidBitShiftTooLarge(BigInt::from(
+                u16::MAX as usize + 1
+            )))
+        );
+    }
+
+    #[test]
+    fn test_evaluation_shift_negative() {
+        assert_eq!(
+            eval_expr_bitwise(
+                ExprBitwise::BitshiftRight(
+                    Box::new(ExprBitwise::Expr(Expr::Term(Term::Factor(Factor::Number(
+                        BigUint::from(1usize),
+                    ))))),
+                    Expr::Negative(Box::new(Expr::Term(Term::Factor(Factor::Number(
+                        BigUint::from(1usize),
+                    ))))),
+                ),
+                &mut HashMap::new(),
+            ),
+            Err(CalcError::InvalidBitShiftNegative)
+        );
     }
 }

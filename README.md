@@ -9,7 +9,9 @@ Starts a REPL to evaluate arithmetic expressions and produce the calculated resu
 
 Supports arbitrarily large numbers, as well as variables.
 
-So far only has addition, subtraction, multiplication and division. Keeps proper operator precedence.
+Supports addition, subtraction, multiplication, division, bitwise shifting/AND/OR/XOR. Keeps operator precedence as detailed [here](https://en.wikipedia.org/wiki/Order_of_operations).
+
+`0xFFFFFFFF` is the maximum right-hand side for shifting operations.
 
 Commands:
 - `exit`: Stops the REPL
@@ -25,23 +27,31 @@ Special Variables:
 
 ```
 1232342353453*34545364587894567456
-\> 42571715897137916732960503025568
+\> $ = 42571715897137916732960503025568
 $ / 123
-\> 346111511358844851487483764435
+\> $ = 346111511358844851487483764435
 23-
 Invalid Expresssion
 10+(5/2)
-\> 12
+\> $ = 12
 num = $
-\> 12
+\> num = 12
 num * 12
-\> 144
+\> $ = 144
 vars
-\> num = 0xC
-\> $ = 0x90
+\> $ = 144
+\> num = 12
 hex
 vars
-\> num = 12
-\> $ = 144
+\> $ = 0x90
+\> num = 0xC
+bin
+vars
+\> $ = 0b10010000
+\> num = 0b1100
+$ >> 3
+\> $ = 0b10010
+$ | 1
+\> $ = 0b10011
 exit
 ```
