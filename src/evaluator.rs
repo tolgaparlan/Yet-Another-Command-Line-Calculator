@@ -31,6 +31,7 @@ pub fn eval_expr(expr: Expr, variables: &mut HashMap<String, BigInt>) -> Result<
         Expr::Sum(e, t) => Ok(eval_expr(*e, variables)? + eval_term(t, variables)?),
         Expr::Subtract(e, t) => Ok(eval_expr(*e, variables)? - eval_term(t, variables)?),
         Expr::Term(t) => eval_term(t, variables),
+        Expr::Negative(e) => Ok(-(eval_expr(*e, variables)?)),
     }
 }
 
@@ -50,7 +51,6 @@ fn eval_factor(f: Factor, variables: &mut HashMap<String, BigInt>) -> Result<Big
     match f {
         Factor::Number(n) => Ok(BigInt::from_biguint(Sign::Plus, n)),
         Factor::Parenthesis(e) => eval_expr(*e, variables),
-        Factor::Negative(n) => Ok(-(eval_factor(*n, variables)?)),
         Factor::Variable(var) => variables
             .get(var.as_str())
             .ok_or(CalcError::UnknownVariable(var))
@@ -97,8 +97,10 @@ mod tests {
     #[test]
     fn test_evaluation_negative() {
         assert_eq!(
-            eval_factor(
-                Factor::Negative(Box::new(Factor::Number(BigUint::from(120usize)))),
+            eval_expr(
+                Expr::Negative(Box::new(Expr::Term(Term::Factor(Factor::Number(
+                    BigUint::from(120usize)
+                ))))),
                 &mut HashMap::new()
             ),
             Ok(BigInt::from(-120))
@@ -126,11 +128,8 @@ mod tests {
         let mut vars = HashMap::from([(String::from("asd"), BigInt::from(123))]);
 
         assert_eq!(
-            eval_factor(
-                Factor::Negative(Box::new(Factor::Variable(String::from("asd")))),
-                &mut vars
-            ),
-            Ok(BigInt::from(-123))
+            eval_factor(Factor::Variable(String::from("asd")), &mut vars),
+            Ok(BigInt::from(123))
         )
     }
 
@@ -142,15 +141,13 @@ mod tests {
             eval_assignment(
                 Assignment::Assign(
                     String::from("asd"),
-                    Expr::Term(Term::Factor(Factor::Negative(Box::new(Factor::Variable(
-                        String::from("asd")
-                    ))))),
+                    Expr::Term(Term::Factor(Factor::Number(BigUint::from(10usize)))),
                 ),
                 &mut vars,
             ),
-            Ok(BigInt::from(-123))
+            Ok(BigInt::from(10usize))
         );
-        assert_eq!(vars[&String::from("asd")], BigInt::from(-123));
+        assert_eq!(vars[&String::from("asd")], BigInt::from(10));
     }
 
     #[test]
@@ -159,13 +156,13 @@ mod tests {
         let mut vars = HashMap::new();
 
         eval_assignment(
-            Assignment::Expr(Expr::Term(Term::Factor(Factor::Negative(Box::new(
-                Factor::Number(BigUint::from(120usize)),
+            Assignment::Expr(Expr::Term(Term::Factor(Factor::Number(BigUint::from(
+                120usize,
             ))))),
             &mut vars,
         )
         .unwrap();
 
-        assert_eq!(vars[&RES_VAR.to_string()], BigInt::from(-120));
+        assert_eq!(vars[&RES_VAR.to_string()], BigInt::from(120));
     }
 }
