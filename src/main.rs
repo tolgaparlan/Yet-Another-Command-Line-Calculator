@@ -33,19 +33,29 @@ fn main() {
                 if let Err(err) = tokenize(line)
                     .and_then(|tokens| parse_assignment(&tokens))
                     .and_then(|expr| eval_assignment(expr, &mut runtime_vars.vars))
-                    .map(|res| {
+                    .map(|var| {
                         // Print in correct display mode
-                        print!("\\> ");
-                        match runtime_vars.display_mode {
-                            DisplayMode::Binary => println!("0b{:b}", res),
-                            DisplayMode::Decimal => println!("{}", res),
-                            DisplayMode::Hex => println!("0x{:X}", res),
-                        }
+                        print_variable(&runtime_vars, &var);
                     })
                 {
                     eprintln!("{}", err);
                 }
             }
         }
+    }
+}
+
+/// Print the given variable with its value and correct display mode
+fn print_variable(runtime_vars: &RuntimeVariables, var: &str) {
+    let Some(val) = runtime_vars.vars.get(var) else {
+        // This should never happen
+        panic!("Tried to print non-existing variable {}. \nVariables:{:?}", var, runtime_vars.vars);
+    };
+
+    print!("\\> {} = ", var);
+    match runtime_vars.display_mode {
+        DisplayMode::Binary => println!("0b{:b}", val),
+        DisplayMode::Decimal => println!("{}", val),
+        DisplayMode::Hex => println!("0x{:X}", val),
     }
 }

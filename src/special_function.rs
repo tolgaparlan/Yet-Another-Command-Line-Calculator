@@ -2,6 +2,8 @@ use num_bigint::BigInt;
 use phf::phf_map;
 use std::{collections::HashMap, process::exit};
 
+use crate::print_variable;
+
 pub enum DisplayMode {
     Binary,
     Decimal,
@@ -26,13 +28,8 @@ fn exit_function(_settings: &mut RuntimeVariables) {
 }
 
 fn vars_print_function(runtime_vars: &mut RuntimeVariables) {
-    for (var, val) in runtime_vars.vars.iter() {
-        print!("\\> ");
-        match runtime_vars.display_mode {
-            DisplayMode::Binary => println!("{} = 0b{:b}", var, val),
-            DisplayMode::Decimal => println!("{} = {}", var, val),
-            DisplayMode::Hex => println!("{} = 0x{:X}", var, val),
-        }
+    for var in runtime_vars.vars.keys() {
+        print_variable(runtime_vars, var);
     }
 }
 

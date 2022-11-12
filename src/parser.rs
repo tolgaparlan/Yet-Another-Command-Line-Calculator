@@ -5,7 +5,7 @@ use num_bigint::BigUint;
 pub const RES_VAR: char = '$';
 
 #[derive(Debug, PartialEq)]
-pub enum Assignment {
+pub enum Assign {
     Assign(String, Expr),
     Expr(Expr),
 }
@@ -32,7 +32,7 @@ pub enum Factor {
     Parenthesis(Box<Expr>),
 }
 
-pub fn parse_assignment(tokens: &[Token]) -> Result<Assignment, CalcError> {
+pub fn parse_assignment(tokens: &[Token]) -> Result<Assign, CalcError> {
     let mut it = tokens.iter().enumerate();
 
     // If the first token is a variable, followed by an equals sign, this is an assignment.
@@ -40,14 +40,14 @@ pub fn parse_assignment(tokens: &[Token]) -> Result<Assignment, CalcError> {
 
     if let Some((_, Token::Variable(var))) = it.next() {
         if let Some((i, Token::Equals)) = it.next() {
-            return Ok(Assignment::Assign(
+            return Ok(Assign::Assign(
                 var.to_string(),
                 parse_expr(&tokens[i + 1..])?,
             ));
         }
     }
 
-    Ok(Assignment::Expr(parse_expr(tokens)?))
+    Ok(Assign::Expr(parse_expr(tokens)?))
 }
 
 pub fn parse_expr(tokens: &[Token]) -> Result<Expr, CalcError> {
@@ -202,7 +202,7 @@ mod tests {
                 Token::Equals,
                 Token::Number(12usize.into()),
             ]),
-            Ok(Assignment::Assign(
+            Ok(Assign::Assign(
                 "a".to_string(),
                 Expr::Term(Term::Factor(Factor::Number(12usize.into())))
             ))
@@ -234,7 +234,7 @@ mod tests {
                 Token::Equals,
                 Token::ResultVariable,
             ]),
-            Ok(Assignment::Assign(
+            Ok(Assign::Assign(
                 "a".to_string(),
                 Expr::Term(Term::Factor(Factor::Variable(RES_VAR.to_string())))
             ))
@@ -258,7 +258,7 @@ mod tests {
     fn test_parser_negative_expr() {
         assert_eq!(
             parse_assignment(&[Token::Minus, Token::Variable("a".to_string()),]),
-            Ok(Assignment::Expr(Expr::Negative(Box::new(Expr::Term(
+            Ok(Assign::Expr(Expr::Negative(Box::new(Expr::Term(
                 Term::Factor(Factor::Variable("a".to_string()))
             )))))
         )
