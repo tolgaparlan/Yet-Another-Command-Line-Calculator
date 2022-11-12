@@ -55,6 +55,12 @@ pub fn parse_expr(tokens: &[Token]) -> Result<Expr, CalcError> {
 
     // If the first token is a minus, this is a negative
     if let Some((_, &Token::Minus)) = it.peek() {
+        // avoid double negative expressions
+        it.next();
+        if let Some((_, &Token::Minus)) = it.peek() {
+            return Err(CalcError::InvalidExpression);
+        }
+
         return Ok(Expr::Negative(Box::new(parse_expr(&tokens[1..])?)));
     }
 
