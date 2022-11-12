@@ -226,4 +226,42 @@ mod tests {
             Ok(BigInt::from(1))
         )
     }
+
+    #[test]
+    fn test_evaluation_shift_large() {
+        assert_eq!(
+            eval_expr_bitwise(
+                ExprBitwise::BitshiftRight(
+                    Box::new(ExprBitwise::Expr(Expr::Term(Term::Factor(Factor::Number(
+                        BigUint::from(1usize)
+                    ))))),
+                    Expr::Term(Term::Factor(Factor::Number(BigUint::from(
+                        u16::MAX as usize + 1
+                    ))))
+                ),
+                &mut HashMap::new()
+            ),
+            Err(CalcError::InvalidBitShiftTooLarge(BigInt::from(
+                u16::MAX as usize + 1
+            )))
+        );
+    }
+
+    #[test]
+    fn test_evaluation_shift_negative() {
+        assert_eq!(
+            eval_expr_bitwise(
+                ExprBitwise::BitshiftRight(
+                    Box::new(ExprBitwise::Expr(Expr::Term(Term::Factor(Factor::Number(
+                        BigUint::from(1usize),
+                    ))))),
+                    Expr::Negative(Box::new(Expr::Term(Term::Factor(Factor::Number(
+                        BigUint::from(1usize),
+                    ))))),
+                ),
+                &mut HashMap::new(),
+            ),
+            Err(CalcError::InvalidBitShiftNegative)
+        );
+    }
 }
