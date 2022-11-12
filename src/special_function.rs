@@ -21,6 +21,7 @@ pub static SPECIAL_FUNCTIONS: phf::Map<&'static str, fn(&mut RuntimeVariables)> 
     "bin" => bin_display_mode,
     "dec" => dec_display_mode,
     "hex" => hex_display_mode,
+    "clear" => clear_function,
 };
 
 fn exit_function(_settings: &mut RuntimeVariables) {
@@ -43,4 +44,10 @@ fn hex_display_mode(runtime_vars: &mut RuntimeVariables) {
 
 fn bin_display_mode(runtime_vars: &mut RuntimeVariables) {
     runtime_vars.display_mode = DisplayMode::Binary;
+}
+
+fn clear_function(runtime_vars: &mut RuntimeVariables) {
+    runtime_vars.vars.clear();
+    // https://stackoverflow.com/a/62101709/7611589
+    println!("\x1B[2J\x1B[1;1H");
 }

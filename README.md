@@ -19,6 +19,7 @@ Commands:
 - `dec`: Changes the display mode to decimal (default)
 - `hex`: Changes the display mode to hexadecimal representation
 - `bin`: Changes the display mode to binary representation
+- `clear`: Clears the terminal and all saved variables
 
 Command strings cannot be used as variable names.
 
