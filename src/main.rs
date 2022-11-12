@@ -1,6 +1,6 @@
 use evaluator::eval_assignment;
 use parser::parse_assignment;
-use special_function::{RuntimeVariables, SPECIAL_FUNCTIONS};
+use special_function::{DisplayMode, RuntimeVariables, SPECIAL_FUNCTIONS};
 
 use crate::tokenizer::tokenize;
 use std::{collections::HashMap, process::exit};
@@ -12,28 +12,35 @@ mod special_function;
 mod tokenizer;
 
 fn main() {
-    let input = std::io::stdin();
+    let stdin = std::io::stdin();
 
-    let mut runtime = RuntimeVariables {
+    let mut runtime_vars = RuntimeVariables {
         vars: HashMap::new(),
+        display_mode: DisplayMode::Decimal,
     };
 
     loop {
         let mut line = String::new();
-        if let Err(e) = input.read_line(&mut line) {
-            eprintln!("Input Error: {}", e);
+        if stdin.read_line(&mut line).is_err() {
+            eprintln!("Unexpected IO Error Occurred");
             exit(1)
         };
-        let line_trimmed = line.trim();
+        let line = line.trim();
 
-        match SPECIAL_FUNCTIONS.get(line_trimmed) {
-            Some(f) => f(&mut runtime),
+        match SPECIAL_FUNCTIONS.get(line) {
+            Some(f) => f(&mut runtime_vars),
             None => {
-                if let Err(err) = tokenize(line_trimmed)
+                if let Err(err) = tokenize(line)
                     .and_then(|tokens| parse_assignment(&tokens))
-                    .and_then(|expr| eval_assignment(expr, &mut runtime.vars))
+                    .and_then(|expr| eval_assignment(expr, &mut runtime_vars.vars))
                     .map(|res| {
-                        println!("\\> {}", res);
+                        // Print in correct display mode
+                        print!("\\> ");
+                        match runtime_vars.display_mode {
+                            DisplayMode::Binary => println!("0b{:b}", res),
+                            DisplayMode::Decimal => println!("{}", res),
+                            DisplayMode::Hex => println!("0x{:X}", res),
+                        }
                     })
                 {
                     eprintln!("{}", err);

@@ -134,7 +134,6 @@ fn parse_factor(tokens: &[Token]) -> Result<Factor, CalcError> {
         Some(Token::ResultVariable) if it.next().is_none() => {
             Ok(Factor::Variable(RES_VAR.to_string()))
         }
-        // Some(Token::Minus) => Ok(Factor::Negative(Box::from(parse_factor(&tokens[1..])?))),
         Some(Token::LeftPar) => {
             if let Some(Token::RightPar) = it.last() {
                 Ok(Factor::Parenthesis(Box::from(parse_expr(
