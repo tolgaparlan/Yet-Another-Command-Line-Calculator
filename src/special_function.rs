@@ -27,7 +27,12 @@ fn exit_function(_settings: &mut RuntimeVariables) {
 
 fn vars_print_function(runtime_vars: &mut RuntimeVariables) {
     for (var, val) in runtime_vars.vars.iter() {
-        println!("\\> {} = {}", var, val);
+        print!("\\> ");
+        match runtime_vars.display_mode {
+            DisplayMode::Binary => println!("{} = 0b{:b}", var, val),
+            DisplayMode::Decimal => println!("{} = {}", var, val),
+            DisplayMode::Hex => println!("{} = 0x{:X}", var, val),
+        }
     }
 }
 
