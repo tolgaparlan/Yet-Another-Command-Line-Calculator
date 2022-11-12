@@ -1,19 +1,22 @@
 use evaluator::eval_assignment;
-use num_bigint::BigInt;
 use parser::parse_assignment;
+use special_function::{RuntimeVariables, SPECIAL_FUNCTIONS};
 
 use crate::tokenizer::tokenize;
-use std::collections::HashMap;
-use std::process::exit;
+use std::{collections::HashMap, process::exit};
 
 mod error;
 mod evaluator;
 mod parser;
+mod special_function;
 mod tokenizer;
 
 fn main() {
     let input = std::io::stdin();
-    let mut variables: HashMap<String, BigInt> = HashMap::new();
+
+    let mut runtime = RuntimeVariables {
+        vars: HashMap::new(),
+    };
 
     loop {
         let mut line = String::new();
@@ -23,17 +26,12 @@ fn main() {
         };
         let line_trimmed = line.trim();
 
-        match line_trimmed {
-            "exit" => exit(0),
-            "vars" => {
-                for (var, val) in variables.iter() {
-                    println!("\\> {} = {}", var, val);
-                }
-            }
-            tokens => {
-                if let Err(err) = tokenize(tokens)
+        match SPECIAL_FUNCTIONS.get(line_trimmed) {
+            Some(f) => f(&mut runtime),
+            None => {
+                if let Err(err) = tokenize(line_trimmed)
                     .and_then(|tokens| parse_assignment(&tokens))
-                    .and_then(|expr| eval_assignment(expr, &mut variables))
+                    .and_then(|expr| eval_assignment(expr, &mut runtime.vars))
                     .map(|res| {
                         println!("\\> {}", res);
                     })
