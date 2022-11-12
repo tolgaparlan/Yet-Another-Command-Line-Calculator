@@ -6,7 +6,17 @@ pub const RES_VAR: char = '$';
 
 #[derive(Debug, PartialEq)]
 pub enum Assign {
-    Assign(String, Expr),
+    Assign(String, ExprBitwise),
+    ExprBitwise(ExprBitwise),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum ExprBitwise {
+    BitwiseOr(Box<ExprBitwise>, Expr),
+    BitwiseAnd(Box<ExprBitwise>, Expr),
+    BitwiseXor(Box<ExprBitwise>, Expr),
+    BitshiftLeft(Box<ExprBitwise>, Expr),
+    BitshiftRight(Box<ExprBitwise>, Expr),
     Expr(Expr),
 }
 
@@ -43,15 +53,58 @@ pub fn parse_assignment(tokens: &[Token]) -> Result<Assign, CalcError> {
         if let Some((i, Token::Equals)) = it.next() {
             return Ok(Assign::Assign(
                 var.to_string(),
-                parse_expr(&tokens[i + 1..])?,
+                parse_bitwise_expr(&tokens[i + 1..])?,
             ));
         }
     }
 
-    Ok(Assign::Expr(parse_expr(tokens)?))
+    Ok(Assign::ExprBitwise(parse_bitwise_expr(tokens)?))
 }
 
-pub fn parse_expr(tokens: &[Token]) -> Result<Expr, CalcError> {
+fn parse_bitwise_expr(tokens: &[Token]) -> Result<ExprBitwise, CalcError> {
+    let it = tokens.iter().enumerate().peekable();
+
+    for (index, token) in it {
+        match token {
+            Token::BitwiseAnd => {
+                return Ok(ExprBitwise::BitwiseAnd(
+                    Box::new(parse_bitwise_expr(&tokens[0..index])?),
+                    parse_expr(&tokens[index + 1..])?,
+                ))
+            }
+            Token::BitwiseOr => {
+                return Ok(ExprBitwise::BitwiseOr(
+                    Box::new(parse_bitwise_expr(&tokens[0..index])?),
+                    parse_expr(&tokens[index + 1..])?,
+                ))
+            }
+            Token::BitwiseXor => {
+                return Ok(ExprBitwise::BitwiseXor(
+                    Box::new(parse_bitwise_expr(&tokens[0..index])?),
+                    parse_expr(&tokens[index + 1..])?,
+                ))
+            }
+            Token::BitshiftRight => {
+                return Ok(ExprBitwise::BitshiftRight(
+                    Box::new(parse_bitwise_expr(&tokens[0..index])?),
+                    parse_expr(&tokens[index + 1..])?,
+                ))
+            }
+            Token::BitshiftLeft => {
+                return Ok(ExprBitwise::BitshiftLeft(
+                    Box::new(parse_bitwise_expr(&tokens[0..index])?),
+                    parse_expr(&tokens[index + 1..])?,
+                ))
+            }
+            _ => continue,
+        }
+    }
+
+    // matched nothing so must be a normal expression
+    Ok(ExprBitwise::Expr(parse_expr(tokens)?))
+}
+
+fn parse_expr(tokens: &[Token]) -> Result<Expr, CalcError> {
     let mut it = tokens.iter().enumerate().peekable();
 
     // If the first token is a minus, this is a negative
@@ -84,9 +137,7 @@ pub fn parse_expr(tokens: &[Token]) -> Result<Expr, CalcError> {
                     return Err(CalcError::UnclosedParanthesis);
                 }
             }
-            _ => {
-                continue;
-            }
+            _ => continue,
         }
     }
 
@@ -203,7 +254,7 @@ mod tests {
             ]),
             Ok(Assign::Assign(
                 "a".to_string(),
-                Expr::Term(Term::Factor(Factor::Number(12usize.into())))
+                ExprBitwise::Expr(Expr::Term(Term::Factor(Factor::Number(12usize.into()))))
             ))
         )
     }
@@ -235,7 +286,9 @@ mod tests {
             ]),
             Ok(Assign::Assign(
                 "a".to_string(),
-                Expr::Term(Term::Factor(Factor::Variable(RES_VAR.to_string())))
+                ExprBitwise::Expr(Expr::Term(Term::Factor(Factor::Variable(
+                    RES_VAR.to_string()
+                ))))
             ))
         )
     }
@@ -257,9 +310,9 @@ mod tests {
     fn test_parser_negative_expr() {
         assert_eq!(
             parse_assignment(&[Token::Minus, Token::Variable("a".to_string()),]),
-            Ok(Assign::Expr(Expr::Negative(Box::new(Expr::Term(
-                Term::Factor(Factor::Variable("a".to_string()))
-            )))))
+            Ok(Assign::ExprBitwise(ExprBitwise::Expr(Expr::Negative(
+                Box::new(Expr::Term(Term::Factor(Factor::Variable("a".to_string()))))
+            ))))
         )
     }
 

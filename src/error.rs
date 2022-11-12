@@ -14,4 +14,8 @@ pub enum CalcError {
     UnknownVariable(String),
     #[error("Cannot use special function name as variable: {0}")]
     SpecialVariableInvalidUse(String),
+    #[error("Right hand side of bit shift operation too large: {0}")]
+    InvalidBitShiftTooLarge(BigInt),
+    #[error("Attempted to bit shift by negative value")]
+    InvalidBitShiftNegative,
 }
