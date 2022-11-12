@@ -11,6 +11,8 @@ Supports arbitrarily large numbers, as well as variables.
 
 Supports addition, subtraction, multiplication, division, bitwise shifting/AND/OR/XOR. Keeps operator precedence as detailed [here](https://en.wikipedia.org/wiki/Order_of_operations).
 
+`0xFFFFFFFF` is the maximum right-hand side for shifting operations.
+
 Commands:
 - `exit`: Stops the REPL
 - `vars`: Prints all variables currently stored in memory
