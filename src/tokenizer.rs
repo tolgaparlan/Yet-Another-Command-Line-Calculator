@@ -3,7 +3,7 @@ use std::{iter::Peekable, str::FromStr};
 use num_bigint::BigUint;
 use num_traits::Num;
 
-use crate::{error::CalcError, parser::RES_VAR, special_function::SPECIAL_FUNCTIONS};
+use crate::{commands::COMMANDS, error::CalcError, parser::RES_VAR};
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Token {
@@ -94,7 +94,7 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, crate::error::CalcError> {
                 let var = consume_alphanumeric(&mut it, Some(&c.to_string()));
 
                 // Cannot use a special function name for a variable
-                if SPECIAL_FUNCTIONS.contains_key(&var) {
+                if COMMANDS.contains_key(&var) {
                     return Err(CalcError::SpecialVariableInvalidUse(var));
                 }
 

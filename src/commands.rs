@@ -15,7 +15,7 @@ pub struct RuntimeVariables {
     pub vars: HashMap<String, BigInt>,
 }
 
-pub static SPECIAL_FUNCTIONS: phf::Map<&'static str, fn(&mut RuntimeVariables)> = phf_map! {
+pub static COMMANDS: phf::Map<&'static str, fn(&mut RuntimeVariables)> = phf_map! {
     "exit" => exit_function,
     "vars" => vars_print_function,
     "bin" => bin_display_mode,

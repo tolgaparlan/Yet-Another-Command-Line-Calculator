@@ -1,14 +1,14 @@
+use commands::{DisplayMode, RuntimeVariables, COMMANDS};
 use evaluator::eval_assignment;
 use parser::parse_assignment;
-use special_function::{DisplayMode, RuntimeVariables, SPECIAL_FUNCTIONS};
 
 use crate::tokenizer::tokenize;
 use std::{collections::HashMap, process::exit};
 
+mod commands;
 mod error;
 mod evaluator;
 mod parser;
-mod special_function;
 mod tokenizer;
 
 fn main() {
@@ -27,7 +27,7 @@ fn main() {
         };
         let line = line.trim();
 
-        match SPECIAL_FUNCTIONS.get(line) {
+        match COMMANDS.get(line) {
             Some(f) => f(&mut runtime_vars),
             None => {
                 if let Err(err) = tokenize(line)
