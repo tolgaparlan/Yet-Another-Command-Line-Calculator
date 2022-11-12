@@ -4,24 +4,27 @@ use num_bigint::{BigInt, Sign};
 
 use crate::{
     error::CalcError,
-    parser::{Assignment, Expr, Factor, Term, RES_VAR},
+    parser::{Assign, Expr, Factor, Term, RES_VAR},
 };
 
+/// Saves the result to the given hashtable, only returns the variable
+/// string of the left hand side. If there was no lhs variable, will still
+/// return RES_VAL string
 pub fn eval_assignment(
-    ass: Assignment,
+    ass: Assign,
     variables: &mut HashMap<String, BigInt>,
-) -> Result<BigInt, CalcError> {
+) -> Result<String, CalcError> {
     match ass {
-        Assignment::Assign(var, expr) => {
+        Assign::Assign(var, expr) => {
             let res = eval_expr(expr, variables)?;
-            variables.insert(var, res.clone());
-            Ok(res)
+            variables.insert(var.clone(), res);
+            Ok(var)
         }
-        Assignment::Expr(expr) => {
+        Assign::Expr(expr) => {
             // Save the result in the special result variable
             let res = eval_expr(expr, variables)?;
-            variables.insert(RES_VAR.to_string(), res.clone());
-            Ok(res)
+            variables.insert(RES_VAR.to_string(), res);
+            Ok(RES_VAR.to_string())
         }
     }
 }
@@ -112,13 +115,13 @@ mod tests {
         let mut vars = HashMap::new();
         assert_eq!(
             eval_assignment(
-                Assignment::Assign(
+                Assign::Assign(
                     String::from("asd"),
                     Expr::Term(Term::Factor(Factor::Number(BigUint::from(123usize)))),
                 ),
                 &mut vars,
             ),
-            Ok(BigInt::from(123))
+            Ok(String::from("asd"))
         );
         assert_eq!(vars[&String::from("asd")], BigInt::from(123));
     }
@@ -139,13 +142,13 @@ mod tests {
 
         assert_eq!(
             eval_assignment(
-                Assignment::Assign(
+                Assign::Assign(
                     String::from("asd"),
                     Expr::Term(Term::Factor(Factor::Number(BigUint::from(10usize)))),
                 ),
                 &mut vars,
             ),
-            Ok(BigInt::from(10usize))
+            Ok(String::from("asd"))
         );
         assert_eq!(vars[&String::from("asd")], BigInt::from(10));
     }
@@ -156,7 +159,7 @@ mod tests {
         let mut vars = HashMap::new();
 
         eval_assignment(
-            Assignment::Expr(Expr::Term(Term::Factor(Factor::Number(BigUint::from(
+            Assign::Expr(Expr::Term(Term::Factor(Factor::Number(BigUint::from(
                 120usize,
             ))))),
             &mut vars,

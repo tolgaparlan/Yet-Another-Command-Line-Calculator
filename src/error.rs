@@ -12,4 +12,6 @@ pub enum CalcError {
     InvalidExpression,
     #[error("Unknown Variable {0}")]
     UnknownVariable(String),
+    #[error("Cannot use special function name as variable: {0}")]
+    SpecialVariableInvalidUse(String),
 }

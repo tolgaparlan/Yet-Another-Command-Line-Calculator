@@ -3,7 +3,7 @@ use std::{iter::Peekable, str::FromStr};
 use num_bigint::BigUint;
 use num_traits::Num;
 
-use crate::{error::CalcError, parser::RES_VAR};
+use crate::{error::CalcError, parser::RES_VAR, special_function::SPECIAL_FUNCTIONS};
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Token {
@@ -69,7 +69,14 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, crate::error::CalcError> {
             c if c.is_ascii_alphabetic() => {
                 // Consume a variable name.
                 // Must start with a letter but then can contain numbers
-                Token::Variable(consume_alphanumeric(&mut it, Some(&c.to_string())))
+                let var = consume_alphanumeric(&mut it, Some(&c.to_string()));
+
+                // Cannot use a special function name for a variable
+                if SPECIAL_FUNCTIONS.contains_key(&var) {
+                    return Err(CalcError::SpecialVariableInvalidUse(var));
+                }
+
+                Token::Variable(var)
             }
             c if c.is_whitespace() => {
                 continue;
@@ -230,5 +237,15 @@ mod tests {
             ),
             "123"
         );
+    }
+
+    #[test]
+    fn test_tokenize_special_function() {
+        // Special function names cannot be used as variables
+        // so tokenizer should reject them
+        assert_eq!(
+            tokenize("exit"),
+            Err(CalcError::SpecialVariableInvalidUse(String::from("exit")))
+        )
     }
 }
