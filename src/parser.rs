@@ -22,6 +22,7 @@ pub enum Expr {
 pub enum Term {
     Mult(Box<Term>, Factor),
     Div(Box<Term>, Factor),
+    Modulo(Box<Term>, Factor),
     Factor(Factor),
 }
 
@@ -98,17 +99,15 @@ fn parse_term(v: &[Token]) -> Result<Term, CalcError> {
 
     while let Some((index, token)) = it.next() {
         match token {
-            Token::Mult => {
-                return Ok(Term::Mult(
-                    Box::from(parse_term(&v[0..index])?),
-                    parse_factor(&v[index + 1..])?,
-                ));
-            }
-            Token::Div => {
-                return Ok(Term::Div(
-                    Box::from(parse_term(&v[0..index])?),
-                    parse_factor(&v[index + 1..])?,
-                ));
+            Token::Mult | Token::Div | Token::Modulo => {
+                let lhs = Box::from(parse_term(&v[0..index])?);
+                let rhs = parse_factor(&v[index + 1..])?;
+                return Ok(match token {
+                    Token::Mult => Term::Mult(lhs, rhs),
+                    Token::Div => Term::Div(lhs, rhs),
+                    Token::Modulo => Term::Modulo(lhs, rhs),
+                    _ => panic!(), // Cannot happen as checked above
+                });
             }
             Token::LeftPar => {
                 if !matching_paranthesis(it.by_ref()) {

@@ -12,6 +12,7 @@ pub enum Token {
     Minus,
     Mult,
     Div,
+    Modulo,
     LeftPar,
     RightPar,
     Equals,
@@ -30,6 +31,7 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, crate::error::CalcError> {
             '-' => Token::Minus,
             '*' => Token::Mult,
             '/' => Token::Div,
+            '%' => Token::Modulo,
             '(' => Token::LeftPar,
             ')' => Token::RightPar,
             '=' => Token::Equals,
@@ -122,9 +124,17 @@ mod tests {
     #[test]
     fn test_tokenize_basic() {
         assert_eq!(
-            tokenize("1+123*(12/234)"),
+            tokenize("(1-(45%4))+123*(12/234)"),
             Ok(vec![
+                Token::LeftPar,
                 Token::Number(1usize.into()),
+                Token::Minus,
+                Token::LeftPar,
+                Token::Number(45usize.into()),
+                Token::Modulo,
+                Token::Number(4usize.into()),
+                Token::RightPar,
+                Token::RightPar,
                 Token::Plus,
                 Token::Number(123usize.into()),
                 Token::Mult,

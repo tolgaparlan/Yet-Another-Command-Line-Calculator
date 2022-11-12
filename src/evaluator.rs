@@ -46,6 +46,7 @@ fn eval_term(t: Term, variables: &mut HashMap<String, BigInt>) -> Result<BigInt,
             lhs.checked_div(&eval_factor(f, variables)?)
                 .ok_or(CalcError::DivisionByZero(lhs))
         }
+        Term::Modulo(t, f) => Ok(eval_term(*t, variables)? % eval_factor(f, variables)?),
         Term::Factor(f) => eval_factor(f, variables),
     }
 }
@@ -167,5 +168,19 @@ mod tests {
         .unwrap();
 
         assert_eq!(vars[&RES_VAR.to_string()], BigInt::from(120));
+    }
+
+    #[test]
+    fn test_evaluation_modulo() {
+        assert_eq!(
+            eval_term(
+                Term::Modulo(
+                    Box::from(Term::Factor(Factor::Number(BigUint::from(120usize)))),
+                    Factor::Number(BigUint::from(17usize)),
+                ),
+                &mut HashMap::new()
+            ),
+            Ok(BigInt::from(1))
+        )
     }
 }
