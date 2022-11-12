@@ -254,4 +254,22 @@ mod tests {
             Err(CalcError::InvalidExpression)
         )
     }
+
+    #[test]
+    fn test_parser_negative_expr() {
+        assert_eq!(
+            parse_assignment(&[Token::Minus, Token::Variable("a".to_string()),]),
+            Ok(Assignment::Expr(Expr::Negative(Box::new(Expr::Term(
+                Term::Factor(Factor::Variable("a".to_string()))
+            )))))
+        )
+    }
+
+    #[test]
+    fn test_parser_double_negative_expr() {
+        assert_eq!(
+            parse_assignment(&[Token::Minus, Token::Minus, Token::Variable("a".to_string()),]),
+            Err(CalcError::InvalidExpression)
+        )
+    }
 }
