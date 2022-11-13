@@ -5,6 +5,7 @@ use num_traits::{Signed, ToPrimitive};
 
 use crate::{
     error::CalcError,
+    functions::FUNCTIONS,
     parser::{Assign, Expr, ExprBitwise, Factor, Term, RES_VAR},
 };
 
@@ -98,6 +99,12 @@ fn eval_factor(f: Factor, variables: &mut HashMap<String, BigInt>) -> Result<Big
             .get(var.as_str())
             .ok_or(CalcError::UnknownVariable(var))
             .cloned(),
+        Factor::Function(f_name, e) => {
+            let f = FUNCTIONS
+                .get(f_name.as_str())
+                .ok_or_else(|| CalcError::UnknownFunction(f_name.to_string()))?;
+            Ok((f)(&[eval_expr(*e, variables)?])?)
+        }
     }
 }
 

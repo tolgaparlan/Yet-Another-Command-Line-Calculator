@@ -18,6 +18,8 @@ pub enum CalcError {
     InvalidBitShiftTooLarge(BigInt),
     #[error("Attempted to bit shift by negative value")]
     InvalidBitShiftNegative,
-    #[error("Function {0} expects {1} arguments. Passed {2}.")]
+    #[error("Function {0} expects {1} arguments. Passed {2}")]
     WrongArgumentCount(String, usize, usize),
+    #[error("Unknown Function {0}")]
+    UnknownFunction(String),
 }

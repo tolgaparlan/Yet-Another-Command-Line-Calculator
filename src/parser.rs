@@ -41,6 +41,7 @@ pub enum Factor {
     Number(BigUint),
     Variable(String),
     Parenthesis(Box<Expr>),
+    Function(String, Box<Expr>),
 }
 
 pub fn parse_assignment(tokens: &[Token]) -> Result<Assign, CalcError> {
@@ -193,6 +194,10 @@ fn parse_factor(tokens: &[Token]) -> Result<Factor, CalcError> {
                 Err(CalcError::UnclosedParanthesis)
             }
         }
+        Some(Token::Function(var)) => Ok(Factor::Function(
+            var.to_string(),
+            Box::new(parse_expr(&tokens[1..])?),
+        )),
         _ => Err(CalcError::InvalidExpression),
     }
 }
