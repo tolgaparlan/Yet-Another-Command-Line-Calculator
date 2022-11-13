@@ -41,7 +41,7 @@ pub enum Factor {
     Number(BigUint),
     Variable(String),
     Parenthesis(Box<Expr>),
-    Function(String, Box<Expr>),
+    Function(String, Vec<Expr>),
 }
 
 pub fn parse_assignment(tokens: &[Token]) -> Result<Assign, CalcError> {
@@ -178,6 +178,7 @@ fn parse_term(v: &[Token]) -> Result<Term, CalcError> {
 
 fn parse_factor(tokens: &[Token]) -> Result<Factor, CalcError> {
     let mut it = tokens.iter();
+    println!("{:?}", tokens);
 
     match &mut it.next() {
         Some(Token::Number(n)) if it.next().is_none() => Ok(Factor::Number(n.clone())),
@@ -196,7 +197,7 @@ fn parse_factor(tokens: &[Token]) -> Result<Factor, CalcError> {
         }
         Some(Token::Function(var)) => Ok(Factor::Function(
             var.to_string(),
-            Box::new(parse_expr(&tokens[1..])?),
+            vec![parse_expr(&tokens[1..])?],
         )),
         _ => Err(CalcError::InvalidExpression),
     }

@@ -21,6 +21,7 @@ pub enum Token {
     LeftPar,
     RightPar,
     Equals,
+    Comma,
     Variable(String),
     Function(String),
     ResultVariable, // Special variable `$` to store the result of the last operation
@@ -44,6 +45,7 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, crate::error::CalcError> {
             '&' => Token::BitwiseAnd,
             '|' => Token::BitwiseOr,
             '^' => Token::BitwiseXor,
+            ',' => Token::Comma,
             '>' => {
                 let Some((_, '>')) = it.next() else {
                     return Err(CalcError::InvalidToken(index));

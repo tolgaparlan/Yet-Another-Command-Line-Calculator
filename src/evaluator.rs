@@ -99,11 +99,20 @@ fn eval_factor(f: Factor, variables: &mut HashMap<String, BigInt>) -> Result<Big
             .get(var.as_str())
             .ok_or(CalcError::UnknownVariable(var))
             .cloned(),
-        Factor::Function(f_name, e) => {
+        Factor::Function(f_name, es) => {
+            // Parse the function name
             let f = FUNCTIONS
                 .get(f_name.as_str())
                 .ok_or_else(|| CalcError::UnknownFunction(f_name.to_string()))?;
-            Ok((f)(&[eval_expr(*e, variables)?])?)
+
+            // Evaluate all the expressions
+            let evaluated_es = es
+                .into_iter()
+                .map(|e| eval_expr(e, variables))
+                .collect::<Result<Vec<BigInt>, CalcError>>()?;
+
+            // Call the function with all the arguments
+            Ok((f)(&evaluated_es)?)
         }
     }
 }
@@ -269,6 +278,55 @@ mod tests {
                 &mut HashMap::new(),
             ),
             Err(CalcError::InvalidBitShiftNegative)
+        );
+    }
+
+    #[test]
+    fn test_evaluation_function() {
+        assert_eq!(
+            eval_factor(
+                Factor::Function(
+                    "sqrt".to_string(),
+                    vec![Expr::Term(Term::Factor(Factor::Number(BigUint::from(
+                        16usize
+                    ))))]
+                ),
+                &mut HashMap::new()
+            ),
+            Ok(BigInt::from(4))
+        )
+    }
+
+    #[test]
+    fn test_evaluation_function_wrong_arguments() {
+        assert!(eval_factor(
+            Factor::Function(
+                "sqrt".to_string(),
+                vec![Expr::Negative(Box::new(Expr::Term(Term::Factor(
+                    Factor::Number(BigUint::from(16usize))
+                ))))]
+            ),
+            &mut HashMap::new()
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn test_evaluation_function_multiple_argument() {
+        assert_eq!(
+            eval_factor(
+                Factor::Function(
+                    "pow".to_string(),
+                    vec![
+                        Expr::Negative(Box::new(Expr::Term(Term::Factor(Factor::Number(
+                            BigUint::from(16usize)
+                        ))))),
+                        Expr::Term(Term::Factor(Factor::Number(BigUint::from(2usize))))
+                    ]
+                ),
+                &mut HashMap::new()
+            ),
+            Ok(BigInt::from(16 * 16))
         );
     }
 }
