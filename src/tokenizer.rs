@@ -22,6 +22,7 @@ pub enum Token {
     RightPar,
     Equals,
     Variable(String),
+    Function(String),
     ResultVariable, // Special variable `$` to store the result of the last operation
 }
 
@@ -89,7 +90,7 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, crate::error::CalcError> {
                 Token::Number(n)
             }
             c if c.is_ascii_alphabetic() => {
-                // Consume a variable name.
+                // Consume a variable name or a function
                 // Must start with a letter but then can contain numbers
                 let var = consume_alphanumeric(&mut it, Some(&c.to_string()));
 
@@ -111,6 +112,7 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, crate::error::CalcError> {
         tokens.push(token);
     }
 
+    transform_tokens(&mut tokens);
     Ok(tokens)
 }
 
@@ -135,6 +137,21 @@ where
     }
 
     digits
+}
+
+/// Runs transformations on the token list which are easier to do after
+/// a first parsing pass. Currently this only includes checking if a variable token
+/// is in fact a function.
+fn transform_tokens(tokens: &mut [Token]) {
+    let mut it = tokens.iter_mut().peekable();
+
+    while let Some(token) = it.next() {
+        if let Token::Variable(var) = token {
+            if matches!(it.peek(), Some(Token::LeftPar)) {
+                *token = Token::Function(var.clone());
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -290,6 +307,14 @@ mod tests {
                 Token::BitwiseAnd,
                 Token::BitwiseXor,
             ])
+        )
+    }
+
+    #[test]
+    fn test_tokenize_function() {
+        assert_eq!(
+            tokenize("fn("),
+            Ok(vec![Token::Function(String::from("fn")), Token::LeftPar])
         )
     }
 }
