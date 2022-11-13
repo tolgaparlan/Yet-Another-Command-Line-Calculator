@@ -8,6 +8,7 @@ use std::{collections::HashMap, process::exit};
 mod commands;
 mod error;
 mod evaluator;
+mod functions;
 mod parser;
 mod tokenizer;
 
