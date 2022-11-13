@@ -1,4 +1,5 @@
 use num_bigint::BigInt;
+use num_traits::Signed;
 use phf::phf_map;
 
 use crate::error::CalcError;
@@ -17,5 +18,13 @@ fn sqrt_func(inputs: &[BigInt]) -> Result<BigInt, CalcError> {
     }
 
     let num = inputs[0].clone();
+
+    if num.is_negative() {
+        return Err(CalcError::InvalidFunctionArgument(format!(
+            "sqrt function does not take negative argument. Passed {}",
+            num
+        )));
+    }
+
     Ok(num.sqrt())
 }

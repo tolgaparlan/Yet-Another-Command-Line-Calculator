@@ -22,4 +22,6 @@ pub enum CalcError {
     WrongArgumentCount(String, usize, usize),
     #[error("Unknown Function {0}")]
     UnknownFunction(String),
+    #[error("{0}")]
+    InvalidFunctionArgument(String),
 }
