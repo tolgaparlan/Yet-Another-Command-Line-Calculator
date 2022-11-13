@@ -99,7 +99,7 @@ fn eval_factor(f: Factor, variables: &mut HashMap<String, BigInt>) -> Result<Big
             .get(var.as_str())
             .ok_or(CalcError::UnknownVariable(var))
             .cloned(),
-        Factor::Function(f_name, es) => {
+        Factor::FunctionCall(f_name, es) => {
             // Parse the function name
             let f = FUNCTIONS
                 .get(f_name.as_str())
@@ -285,7 +285,7 @@ mod tests {
     fn test_evaluation_function() {
         assert_eq!(
             eval_factor(
-                Factor::Function(
+                Factor::FunctionCall(
                     "sqrt".to_string(),
                     vec![Expr::Term(Term::Factor(Factor::Number(BigUint::from(
                         16usize
@@ -300,7 +300,7 @@ mod tests {
     #[test]
     fn test_evaluation_function_wrong_arguments() {
         assert!(eval_factor(
-            Factor::Function(
+            Factor::FunctionCall(
                 "sqrt".to_string(),
                 vec![Expr::Negative(Box::new(Expr::Term(Term::Factor(
                     Factor::Number(BigUint::from(16usize))
@@ -315,7 +315,7 @@ mod tests {
     fn test_evaluation_function_multiple_argument() {
         assert_eq!(
             eval_factor(
-                Factor::Function(
+                Factor::FunctionCall(
                     "pow".to_string(),
                     vec![
                         Expr::Negative(Box::new(Expr::Term(Term::Factor(Factor::Number(

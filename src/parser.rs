@@ -40,8 +40,14 @@ pub enum Term {
 pub enum Factor {
     Number(BigUint),
     Variable(String),
-    Parenthesis(Box<Expr>),
-    Function(String, Vec<Expr>),
+    Parenthesis(Box<ExprBitwise>),
+    FunctionCall(String, Args),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Args {
+    Empty,
+    Args(Box<ExprBitwise>, Box<Args>),
 }
 
 pub fn parse_assignment(tokens: &[Token]) -> Result<Assign, CalcError> {
@@ -178,7 +184,6 @@ fn parse_term(v: &[Token]) -> Result<Term, CalcError> {
 
 fn parse_factor(tokens: &[Token]) -> Result<Factor, CalcError> {
     let mut it = tokens.iter();
-    println!("{:?}", tokens);
 
     match &mut it.next() {
         Some(Token::Number(n)) if it.next().is_none() => Ok(Factor::Number(n.clone())),
@@ -195,7 +200,7 @@ fn parse_factor(tokens: &[Token]) -> Result<Factor, CalcError> {
                 Err(CalcError::UnclosedParanthesis)
             }
         }
-        Some(Token::Function(var)) => Ok(Factor::Function(
+        Some(Token::Function(var)) => Ok(Factor::FunctionCall(
             var.to_string(),
             vec![parse_expr(&tokens[1..])?],
         )),
